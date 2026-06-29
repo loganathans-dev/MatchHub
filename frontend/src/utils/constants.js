@@ -1,0 +1,45 @@
+export const AVAILABLE_SPORTS = [
+  // Team Sports
+  { id: 'ts-1', name: 'Football (Soccer)', type: 'team' },
+  { id: 'ts-2', name: 'Cricket', type: 'team' },
+  { id: 'ts-3', name: 'Basketball', type: 'team' },
+  { id: 'ts-4', name: 'Volleyball', type: 'team' },
+  { id: 'ts-5', name: 'Baseball', type: 'team' },
+  { id: 'ts-6', name: 'Softball', type: 'team' },
+  { id: 'ts-7', name: 'Rugby Union', type: 'team' },
+  { id: 'ts-8', name: 'Rugby League', type: 'team' },
+  { id: 'ts-9', name: 'Hockey (Field Hockey)', type: 'team' },
+  { id: 'ts-10', name: 'Ice Hockey', type: 'team' },
+  { id: 'ts-11', name: 'Handball', type: 'team' },
+  { id: 'ts-12', name: 'American Football', type: 'team' },
+  { id: 'ts-13', name: 'Futsal', type: 'team' },
+  { id: 'ts-14', name: 'Kabaddi', type: 'team' },
+  { id: 'ts-15', name: 'Kho Kho', type: 'team' },
+  { id: 'ts-16', name: 'Water Polo', type: 'team' },
+  { id: 'ts-17', name: 'Netball', type: 'team' },
+  { id: 'ts-18', name: 'Lacrosse', type: 'team' },
+  { id: 'ts-19', name: 'Sepak Takraw', type: 'team' },
+  { id: 'ts-20', name: 'Beach Volleyball', type: 'team' },
+  { id: 'ts-21', name: 'Throwball', type: 'team' },
+  { id: 'ts-22', name: 'Badminton (Doubles)', type: 'team' },
+
+  // Individual Games
+  { id: 'ig-1', name: 'Chess', type: 'individual' },
+  { id: 'ig-2', name: 'Carrom', type: 'individual' },
+  { id: 'ig-3', name: 'Table Tennis', type: 'individual' },
+  { id: 'ig-4', name: 'Badminton (Singles)', type: 'individual' },
+
+  // Athletics
+  { id: 'at-1', name: '100m', type: 'athletics' },
+  { id: 'at-2', name: '200m', type: 'athletics' },
+  { id: 'at-3', name: '400m', type: 'athletics' },
+  { id: 'at-4', name: '800m', type: 'athletics' },
+  { id: 'at-5', name: '1500m', type: 'athletics' },
+  { id: 'at-6', name: 'Relay (4×100m)', type: 'athletics' },
+  { id: 'at-7', name: 'Long Jump', type: 'athletics' },
+  { id: 'at-8', name: 'Triple Jump', type: 'athletics' },
+  { id: 'at-9', name: 'High Jump', type: 'athletics' },
+  { id: 'at-10', name: 'Shot Put', type: 'athletics' },
+  { id: 'at-11', name: 'Discus Throw', type: 'athletics' },
+  { id: 'at-12', name: 'Javelin Throw', type: 'athletics' }
+];
