@@ -34,7 +34,14 @@ const CollegeList = () => {
 
   return (
     <div className="student-portal-container">
-      <header className="student-header">
+      <header className="student-header" style={{ position: 'relative' }}>
+        <button 
+          onClick={() => navigate('/management/signin')}
+          className="admin-btn-primary"
+          style={{ position: 'absolute', top: 0, right: 0, width: 'auto', padding: '8px 16px', fontSize: '14px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }}
+        >
+          Management
+        </button>
         <h1 className="student-title">Participating Colleges</h1>
         <p className="student-subtitle">Find your institution to view matches and results</p>
       </header>
