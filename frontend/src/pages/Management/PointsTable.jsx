@@ -88,9 +88,9 @@ const PointsTable = () => {
       try {
         const token = localStorage.getItem('token');
         const [deptRes, eventRes, matchRes] = await Promise.all([
-          fetch(`/api/departments${eventId ? `?eventId=${eventId}` : ''}`, { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch('/api/events', { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch(`/api/matches${eventId ? `?eventId=${eventId}` : ''}`, { headers: { 'Authorization': `Bearer ${token}` } })
+          fetch(`${import.meta.env.VITE_API_URL || ""}/api/departments${eventId ? `?eventId=${eventId}` : ''}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(`${import.meta.env.VITE_API_URL || ""}/api/events`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(`${import.meta.env.VITE_API_URL || ""}/api/matches${eventId ? `?eventId=${eventId}` : ''}`, { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
         
         if (deptRes.ok) {

@@ -15,7 +15,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchColleges = async () => {
       try {
-        const response = await fetch('/api/public/colleges');
+        const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/public/colleges`);
         if (response.ok) {
           const data = await response.json();
           // Add default status/location for UI purposes since backend might not have it yet

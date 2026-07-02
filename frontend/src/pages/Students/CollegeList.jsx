@@ -14,7 +14,7 @@ const CollegeList = () => {
   useEffect(() => {
     const fetchColleges = async () => {
       try {
-        const response = await fetch('/api/public/colleges');
+        const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/public/colleges`);
         if (response.ok) {
           setColleges(await response.json());
         }

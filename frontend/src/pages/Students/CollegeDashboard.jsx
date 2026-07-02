@@ -18,9 +18,9 @@ const CollegeDashboard = () => {
     const fetchDashboardData = async () => {
       try {
         const [colRes, deptRes, matchRes] = await Promise.all([
-          fetch(`/api/public/colleges/${collegeId}`),
-          fetch(`/api/public/colleges/${collegeId}/departments`),
-          fetch(`/api/public/colleges/${collegeId}/matches`)
+          fetch(`${import.meta.env.VITE_API_URL || ""}/api/public/colleges/${collegeId}`),
+          fetch(`${import.meta.env.VITE_API_URL || ""}/api/public/colleges/${collegeId}/departments`),
+          fetch(`${import.meta.env.VITE_API_URL || ""}/api/public/colleges/${collegeId}/matches`)
         ]);
 
         if (colRes.ok) setCollege(await colRes.json());

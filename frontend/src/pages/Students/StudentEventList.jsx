@@ -16,8 +16,8 @@ const StudentEventList = () => {
     const fetchData = async () => {
       try {
         const [collegeRes, eventsRes] = await Promise.all([
-          fetch(`/api/public/colleges/${collegeId}`),
-          fetch('/api/public/events')
+          fetch(`${import.meta.env.VITE_API_URL || ""}/api/public/colleges/${collegeId}`),
+          fetch(`${import.meta.env.VITE_API_URL || ""}/api/public/events`)
         ]);
         if (collegeRes.ok) {
           setCollege(await collegeRes.json());

@@ -22,8 +22,8 @@ const ScheduledMatchesList = () => {
       try {
         const token = localStorage.getItem('token');
         const [matchRes, eventRes] = await Promise.all([
-          fetch(`/api/matches${eventId ? `?eventId=${eventId}` : ''}`, { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch('/api/events', { headers: { 'Authorization': `Bearer ${token}` } })
+          fetch(`${import.meta.env.VITE_API_URL || ""}/api/matches${eventId ? `?eventId=${eventId}` : ''}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(`${import.meta.env.VITE_API_URL || ""}/api/events`, { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
         
         if (eventRes.ok && eventId) {

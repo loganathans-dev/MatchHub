@@ -31,7 +31,7 @@ const MatchSchedule = () => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
-        const eventRes = await fetch('/api/events', { headers: { 'Authorization': `Bearer ${token}` } });
+        const eventRes = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/events`, { headers: { 'Authorization': `Bearer ${token}` } });
         
         if (eventRes.ok) {
           const data = await eventRes.json();
@@ -69,7 +69,7 @@ const MatchSchedule = () => {
             }
 
             // Now fetch departments using the resolved event ID
-            const deptRes = await fetch(`/api/departments?eventId=${currentEvent._id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const deptRes = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/departments?eventId=${currentEvent._id}`, { headers: { 'Authorization': `Bearer ${token}` } });
             if (deptRes.ok) {
               const deptData = await deptRes.json();
               setDepartments(deptData.map(d => ({ ...d, id: d._id })));
@@ -213,7 +213,7 @@ const MatchSchedule = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/matches', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/matches`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

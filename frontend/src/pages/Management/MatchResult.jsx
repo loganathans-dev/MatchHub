@@ -29,7 +29,7 @@ const MatchResult = () => {
     const fetchMatches = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`/api/matches${eventId ? `?eventId=${eventId}` : ''}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/matches${eventId ? `?eventId=${eventId}` : ''}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) {
@@ -110,7 +110,7 @@ const MatchResult = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/matches/${selectedMatch.id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/matches/${selectedMatch.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
