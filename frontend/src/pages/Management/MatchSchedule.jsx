@@ -23,33 +23,56 @@ const MatchSchedule = () => {
   const eventId = location.state?.eventId;
 
   useEffect(() => {
+    if (!eventId) {
+      navigate('/management/event-list', { state: { action: 'schedule' } });
+      return;
+    }
+
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
-        const [deptRes, eventRes] = await Promise.all([
-          fetch(`/api/departments${eventId ? `?eventId=${eventId}` : ''}`, { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch('/api/events', { headers: { 'Authorization': `Bearer ${token}` } })
-        ]);
+        const eventRes = await fetch('/api/events', { headers: { 'Authorization': `Bearer ${token}` } });
         
-        if (deptRes.ok) {
-          const data = await deptRes.json();
-          setDepartments(data.map(d => ({ ...d, id: d._id })));
-        }
         if (eventRes.ok) {
           const data = await eventRes.json();
           setEvents(data);
           
+          let currentEvent = null;
           if (eventId) {
-            const currentEvent = data.find(e => e._id === eventId);
-            if (currentEvent) {
-              setActiveEvent(currentEvent);
-              if (currentEvent.sportsList) {
+            currentEvent = data.find(e => e._id === eventId);
+          }
+          if (!currentEvent && data.length > 0) {
+            currentEvent = data[0]; // Default to most recent/first event
+          }
+          
+          if (currentEvent) {
+            setActiveEvent(currentEvent);
+            if (currentEvent.sportsList) {
               const mappedSports = currentEvent.sportsList.map(sportName => {
                 const found = AVAILABLE_SPORTS.find(s => s.name === sportName);
                 return found || { id: sportName, name: sportName, type: 'team' };
               });
               setEventSports(mappedSports);
+            }
+
+            // Pre-fill the date and time to the event's start date so the calendar opens on the correct month
+            if (currentEvent.startDate) {
+              const date = new Date(currentEvent.startDate);
+              if (!isNaN(date.getTime())) {
+                const offset = date.getTimezoneOffset() * 60000;
+                const localDate = new Date(date.getTime() - offset);
+                setFormData(prev => ({
+                  ...prev,
+                  matchDateTime: prev.matchDateTime || localDate.toISOString().slice(0, 16)
+                }));
               }
+            }
+
+            // Now fetch departments using the resolved event ID
+            const deptRes = await fetch(`/api/departments?eventId=${currentEvent._id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+            if (deptRes.ok) {
+              const deptData = await deptRes.json();
+              setDepartments(deptData.map(d => ({ ...d, id: d._id })));
             }
           }
         }
@@ -58,7 +81,7 @@ const MatchSchedule = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [eventId]);
 
   const selectedSport = eventSports.find(s => s.id === formData.sportId) || AVAILABLE_SPORTS.find(s => s.id === formData.sportId);
   const isTeamSport = selectedSport ? selectedSport.type === 'team' : true;
@@ -87,6 +110,39 @@ const MatchSchedule = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleDateTimeChange = (field, type, value) => {
+    setFormData(prev => {
+      const currentVal = prev[field] || '';
+      let datePart = '';
+      let timePart = '';
+      
+      if (currentVal.includes('T')) {
+        [datePart, timePart] = currentVal.split('T');
+      } else {
+        datePart = currentVal;
+      }
+
+      if (type === 'date') {
+        datePart = value;
+        if (datePart && !timePart) {
+          timePart = '09:00';
+        }
+      } else if (type === 'time') {
+        timePart = value;
+        if (timePart && !datePart) {
+          const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+          datePart = (new Date(Date.now() - tzOffset)).toISOString().split('T')[0];
+        }
+      }
+
+      if (!datePart && !timePart) {
+        return { ...prev, [field]: '' };
+      }
+
+      return { ...prev, [field]: `${datePart}T${timePart}` };
+    });
+  };
+
   const handleParticipantToggle = (teamId) => {
     setFormData(prev => {
       const currentParticipants = prev.participatingTeamIds;
@@ -105,6 +161,22 @@ const MatchSchedule = () => {
     if (!formData.sportId || !formData.matchDateTime) {
       setError('Please select a sport and a date/time.');
       return;
+    }
+
+    if (!formData.matchDateTime.includes('T') || !formData.matchDateTime.split('T')[0] || !formData.matchDateTime.split('T')[1]) {
+      setError('Please provide both valid date and time for the match.');
+      return;
+    }
+
+    if (activeEvent) {
+      const matchDate = new Date(formData.matchDateTime);
+      const eventStart = new Date(activeEvent.startDate);
+      const eventEnd = new Date(activeEvent.endDate);
+      
+      if (matchDate < eventStart || matchDate > eventEnd) {
+        setError(`Match date and time must be between the event timeline (${eventStart.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })} — ${eventEnd.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}).`);
+        return;
+      }
     }
 
     if (isTeamSport) {
@@ -179,17 +251,27 @@ const MatchSchedule = () => {
         <Link to="#" onClick={(e) => { e.preventDefault(); navigate(-1); }} className="auth-link" style={{ display: 'flex', width: 'fit-content', marginBottom: '1rem', color: 'var(--text-muted)' }}>
           <ArrowLeft size={24} />
         </Link>
-        <div className="auth-header">
-          <h1 className="auth-title">Schedule Events & Matches</h1>
-          <p className="auth-subtitle">Set up fixtures by selecting the sport, the competing teams/participants, and the time</p>
-          {activeEvent && (
-            <div style={{ marginTop: '12px', padding: '8px 12px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '8px', display: 'inline-block' }}>
-              <p style={{ margin: 0, fontSize: '13px', color: '#60a5fa', fontWeight: '500' }}>
-                <span style={{ marginRight: '6px' }}>📅</span>
-                Event Timeline: {new Date(activeEvent.startDate).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })} — {new Date(activeEvent.endDate).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
-              </p>
-            </div>
-          )}
+        <div className="auth-header responsive-flex-header">
+          <div>
+            <h1 className="auth-title" style={{ textAlign: 'left', marginBottom: '8px' }}>Schedule Events & Matches</h1>
+            <p className="auth-subtitle" style={{ textAlign: 'left' }}>Set up fixtures by selecting the sport, the competing teams/participants, and the time</p>
+            {activeEvent && (
+              <div style={{ marginTop: '12px', padding: '8px 12px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '8px', display: 'inline-block', textAlign: 'left' }}>
+                <p style={{ margin: 0, fontSize: '13px', color: '#60a5fa', fontWeight: '500' }}>
+                  <span style={{ marginRight: '6px' }}>📅</span>
+                  Event Timeline: {new Date(activeEvent.startDate).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })} — {new Date(activeEvent.endDate).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                </p>
+              </div>
+            )}
+          </div>
+          <button 
+            type="button"
+            className="btn-primary" 
+            style={{ width: 'auto', padding: '10px 24px', margin: 0, background: 'transparent', border: '1px solid var(--primary-color)', color: 'var(--primary-color)', fontSize: '14px' }}
+            onClick={() => navigate('/management/scheduled-matches', { state: { eventId: activeEvent?._id || eventId } })}
+          >
+            View Scheduled Matches
+          </button>
         </div>
 
         <form className="auth-form" onSubmit={(e) => handleSubmit(e, 'save_and_redirect')}>
@@ -289,16 +371,24 @@ const MatchSchedule = () => {
 
           <div className="form-group full-width">
             <label className="form-label">Match/Event Date and Time *</label>
-            <input 
-              type="datetime-local" 
-              name="matchDateTime" 
-              className="form-input" 
-              value={formData.matchDateTime}
-              onChange={handleInputChange}
-              min={toLocalDatetimeLocal(activeEvent?.startDate, false)}
-              max={toLocalDatetimeLocal(activeEvent?.endDate, true)}
-              required 
-            />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input 
+                type="date" 
+                className="form-input" 
+                value={formData.matchDateTime ? formData.matchDateTime.split('T')[0] : ''}
+                onChange={(e) => handleDateTimeChange('matchDateTime', 'date', e.target.value)}
+                min={activeEvent && activeEvent.startDate ? toLocalDatetimeLocal(activeEvent.startDate, false).split('T')[0] : undefined}
+                max={activeEvent && activeEvent.endDate ? toLocalDatetimeLocal(activeEvent.endDate, true).split('T')[0] : undefined}
+                required 
+              />
+              <input 
+                type="time" 
+                className="form-input" 
+                value={formData.matchDateTime && formData.matchDateTime.includes('T') ? formData.matchDateTime.split('T')[1] : ''}
+                onChange={(e) => handleDateTimeChange('matchDateTime', 'time', e.target.value)}
+                required 
+              />
+            </div>
           </div>
 
           <div style={{ display: 'flex', gap: '16px', marginTop: '24px' }}>

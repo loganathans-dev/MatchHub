@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import '../../styles/Auth.css';
 
@@ -13,6 +13,11 @@ const ScheduledMatchesList = () => {
   const eventId = location.state?.eventId;
 
   useEffect(() => {
+    if (!eventId) {
+      navigate('/management/event-list', { state: { action: 'matches' } });
+      return;
+    }
+
     const fetchMatchesAndEvent = async () => {
       try {
         const token = localStorage.getItem('token');
@@ -77,7 +82,7 @@ const ScheduledMatchesList = () => {
         <Link to="#" onClick={(e) => { e.preventDefault(); navigate(-1); }} className="auth-link" style={{ display: 'flex', width: 'fit-content', marginBottom: '1rem', color: 'var(--text-muted)' }}>
           <ArrowLeft size={24} />
         </Link>
-        <div className="auth-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <div className="auth-header responsive-flex-header" style={{ marginBottom: '24px' }}>
           <div>
             <h1 className="auth-title" style={{ textAlign: 'left', marginBottom: '8px' }}>Scheduled Matches</h1>
             <p className="auth-subtitle" style={{ textAlign: 'left' }}>View all scheduled fixtures categorized by sport</p>
@@ -97,16 +102,14 @@ const ScheduledMatchesList = () => {
           <>
 
         {/* Filters Section */}
-        <div style={{ background: 'var(--bg-dark)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '24px', display: 'flex', gap: '16px', alignItems: 'flex-end' }}>
-          <div className="form-group" style={{ flex: 1, margin: 0 }}>
+        <div style={{ background: 'var(--bg-dark)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '24px', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end' }}>
+          <div className="form-group" style={{ flex: '1 1 200px', minWidth: '200px', margin: 0 }}>
             <label className="form-label">Filter by Date</label>
             <input 
               type="date" 
               className="form-input" 
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
-              min={toLocalDate(activeEvent?.startDate)}
-              max={toLocalDate(activeEvent?.endDate)}
             />
           </div>
           <button 
@@ -139,14 +142,11 @@ const ScheduledMatchesList = () => {
                     const matchTime = new Date(match.dateTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
                     
                     return (
-                      <div key={match.id} style={{ 
+                      <div key={match.id} className="responsive-flex-card" style={{ 
                         background: 'var(--input-bg)', 
                         border: '1px solid var(--border-color)', 
                         borderRadius: '12px', 
                         padding: '20px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
                         transition: 'transform 0.2s',
                       }}
                       onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}

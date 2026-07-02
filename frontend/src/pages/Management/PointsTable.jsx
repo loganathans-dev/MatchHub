@@ -4,31 +4,67 @@ import { ArrowLeft } from 'lucide-react';
 import '../../styles/Auth.css';
 import { AVAILABLE_SPORTS } from '../../utils/constants';
 
-// Helper to generate mock points for an array of departments
-const generateOverallPoints = (departments) => {
-  return departments.map((team) => ({
-    ...team,
-    totalPoints: Math.floor(Math.random() * 30) + 10,
-    gold: Math.floor(Math.random() * 3),
-    silver: Math.floor(Math.random() * 4),
-    bronze: Math.floor(Math.random() * 5),
-  })).sort((a, b) => b.totalPoints - a.totalPoints);
-};
+// Calculate actual points based on matches, aggregating by department name to prevent duplicates
+const calculatePoints = (departments, matches, sportNameFilter = null) => {
+  const idToNormName = {};
+  const deptPoints = departments.reduce((acc, dept) => {
+    const normName = dept.name.trim().toLowerCase();
+    idToNormName[dept._id] = normName;
+    
+    // Group departments with same name (ignoring case)
+    if (!acc[normName]) {
+      acc[normName] = { ...dept, name: dept.name.trim(), totalPoints: 0 };
+    }
+    return acc;
+  }, {});
 
-// Mock Points Data for Sports-wise Table
-const generateSportsPoints = (departments, sportId) => {
-  if (!departments || departments.length === 0) return [];
-  const shuffled = [...departments].sort(() => 0.5 - Math.random());
-  const participants = shuffled.slice(0, Math.min(4, departments.length)); 
-  
-  return participants.map((team, index) => {
-    let points = 0;
-    if (index === 0) points = 10;
-    else if (index === 1) points = 5;
-    else if (index === 2) points = 2;
+  matches.forEach(match => {
+    if (match.status !== 'Completed') return;
+    if (sportNameFilter && match.sportName !== sportNameFilter) return;
 
-    return { ...team, points, rank: index + 1 };
-  }).sort((a, b) => b.points - a.points);
+    if (match.type === 'team') {
+      const winnerId = match.winner?._id || match.winner;
+      let runnerId = null;
+      
+      const teamAId = match.teamA?._id || match.teamA;
+      const teamBId = match.teamB?._id || match.teamB;
+
+      if (winnerId === teamAId) runnerId = teamBId;
+      else if (winnerId === teamBId) runnerId = teamAId;
+
+      const winnerName = idToNormName[winnerId];
+      const runnerName = idToNormName[runnerId];
+
+      if (winnerName && deptPoints[winnerName]) {
+        deptPoints[winnerName].totalPoints += 10;
+      }
+      
+      if (runnerName && deptPoints[runnerName]) {
+        deptPoints[runnerName].totalPoints += 5;
+      }
+    } else {
+      // For multi-participant, assign 10, 5, 3 points for 1st, 2nd, 3rd places
+      const winnerId = match.winner?._id || match.winner;
+      const runnerId = match.runner?._id || match.runner;
+      const thirdPlaceId = match.thirdPlace?._id || match.thirdPlace;
+      
+      const winnerName = idToNormName[winnerId];
+      const runnerName = idToNormName[runnerId];
+      const thirdPlaceName = idToNormName[thirdPlaceId];
+      
+      if (winnerName && deptPoints[winnerName]) {
+        deptPoints[winnerName].totalPoints += 10;
+      }
+      if (runnerName && deptPoints[runnerName]) {
+        deptPoints[runnerName].totalPoints += 5;
+      }
+      if (thirdPlaceName && deptPoints[thirdPlaceName]) {
+        deptPoints[thirdPlaceName].totalPoints += 3;
+      }
+    }
+  });
+
+  return Object.values(deptPoints).sort((a, b) => b.totalPoints - a.totalPoints);
 };
 
 const PointsTable = () => {
@@ -38,16 +74,23 @@ const PointsTable = () => {
   const [activeTab, setActiveTab] = useState('overall'); // 'overall' | 'sportswise'
   const [selectedSportId, setSelectedSportId] = useState('');
   const [departments, setDepartments] = useState([]);
+  const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!eventId) {
+      navigate('/management/event-list', { state: { action: 'points' } });
+      return;
+    }
+
     const fetchDepartmentsAndEvents = async () => {
       try {
         const token = localStorage.getItem('token');
-        const [deptRes, eventRes] = await Promise.all([
-          fetch('/api/departments', { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch('/api/events', { headers: { 'Authorization': `Bearer ${token}` } })
+        const [deptRes, eventRes, matchRes] = await Promise.all([
+          fetch(`/api/departments${eventId ? `?eventId=${eventId}` : ''}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('/api/events', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(`/api/matches${eventId ? `?eventId=${eventId}` : ''}`, { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
         
         if (deptRes.ok) {
@@ -55,6 +98,11 @@ const PointsTable = () => {
           setDepartments(data);
         }
         
+        if (matchRes.ok) {
+          const data = await matchRes.json();
+          setMatches(data);
+        }
+
         if (eventRes.ok && eventId) {
           const data = await eventRes.json();
           const activeEvent = data.find(e => e._id === eventId);
@@ -78,8 +126,13 @@ const PointsTable = () => {
     fetchDepartmentsAndEvents();
   }, []);
 
-  const OVERALL_POINTS = React.useMemo(() => generateOverallPoints(departments), [departments]);
-  const currentSportPoints = React.useMemo(() => generateSportsPoints(departments, selectedSportId), [departments, selectedSportId]);
+  const OVERALL_POINTS = React.useMemo(() => calculatePoints(departments, matches), [departments, matches]);
+  
+  const currentSportPoints = React.useMemo(() => {
+    const sportName = eventSports.find(s => s.id === selectedSportId)?.name;
+    const ranked = calculatePoints(departments, matches, sportName);
+    return ranked.map((dept, idx) => ({ ...dept, points: dept.totalPoints, rank: idx + 1 }));
+  }, [departments, matches, selectedSportId, eventSports]);
 
   return (
     <div className="auth-container" style={{ padding: '40px 20px', minHeight: '100vh', alignItems: 'flex-start' }}>
@@ -93,7 +146,7 @@ const PointsTable = () => {
         </div>
 
         {/* View Toggle Tabs */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', background: 'var(--bg-dark)', padding: '6px', borderRadius: '12px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px', background: 'var(--bg-dark)', padding: '6px', borderRadius: '12px' }}>
           <button 
             style={{ 
               flex: 1, 
@@ -140,9 +193,6 @@ const PointsTable = () => {
                 <tr style={{ background: 'var(--bg-dark)', borderBottom: '2px solid var(--border-color)' }}>
                   <th style={{ padding: '16px', color: 'var(--text-main)' }}>Rank</th>
                   <th style={{ padding: '16px', color: 'var(--text-main)' }}>Department / Team</th>
-                  <th style={{ padding: '16px', color: 'gold', textAlign: 'center' }}>🥇 Gold</th>
-                  <th style={{ padding: '16px', color: 'silver', textAlign: 'center' }}>🥈 Silver</th>
-                  <th style={{ padding: '16px', color: '#cd7f32', textAlign: 'center' }}>🥉 Bronze</th>
                   <th style={{ padding: '16px', color: 'var(--primary-color)', textAlign: 'right' }}>Total Points</th>
                 </tr>
               </thead>
@@ -153,9 +203,6 @@ const PointsTable = () => {
                       #{index + 1}
                     </td>
                     <td style={{ padding: '16px', color: 'var(--text-main)', fontWeight: '500' }}>{team.name}</td>
-                    <td style={{ padding: '16px', color: 'var(--text-muted)', textAlign: 'center' }}>{team.gold}</td>
-                    <td style={{ padding: '16px', color: 'var(--text-muted)', textAlign: 'center' }}>{team.silver}</td>
-                    <td style={{ padding: '16px', color: 'var(--text-muted)', textAlign: 'center' }}>{team.bronze}</td>
                     <td style={{ padding: '16px', color: 'var(--primary-color)', fontWeight: 'bold', textAlign: 'right', fontSize: '18px' }}>{team.totalPoints} pts</td>
                   </tr>
                 ))}

@@ -6,9 +6,14 @@ const Event = require('../models/Event');
 const createEvent = async (req, res) => {
   try {
     const { title, startDate, endDate, description, sportsList } = req.body;
+    const eventTitle = title || req.body.eventTitle || req.body.eventName || req.body.name;
+
+    if (!eventTitle || !eventTitle.trim()) {
+      return res.status(400).json({ message: 'Event title is required' });
+    }
 
     const event = await Event.create({
-      title,
+      title: eventTitle.trim(),
       startDate,
       endDate,
       description,

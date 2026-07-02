@@ -17,6 +17,8 @@ const matchSchema = new mongoose.Schema({
   
   // Results
   winner: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
+  runner: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
+  thirdPlace: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
   score: { type: String, default: '' },
 }, {
   timestamps: true

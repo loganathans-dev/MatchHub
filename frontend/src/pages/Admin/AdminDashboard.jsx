@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, MapPin, CheckCircle, XCircle, X, Building, Phone, Mail, User } from 'lucide-react';
 import './AdminDashboard.css';
 
-// Real data will be fetched from API
+
 
 const AdminDashboard = () => {
   const [colleges, setColleges] = useState([]);

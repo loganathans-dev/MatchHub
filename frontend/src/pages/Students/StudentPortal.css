@@ -37,6 +37,8 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   letter-spacing: -0.02em;
+  line-height: 1.3;
+  padding-bottom: 0.1em;
 }
 
 .student-subtitle {
@@ -361,10 +363,34 @@
   color: #fff;
 }
 
+.back-arrow-wrapper {
+  text-align: left;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-top: 1rem;
+  padding-left: 1rem;
+}
+
+.back-arrow-icon {
+  width: 28px;
+  height: 28px;
+}
+
 /* Responsive Overrides */
 @media (max-width: 768px) {
   .student-portal-container {
     padding: 1.5rem 1rem;
+  }
+
+  .back-arrow-wrapper {
+    padding-top: 0;
+    padding-left: 0;
+  }
+
+  .back-arrow-icon {
+    width: 20px;
+    height: 20px;
   }
 
   .student-title {

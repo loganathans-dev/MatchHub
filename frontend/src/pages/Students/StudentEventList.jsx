@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, MapPin, Trophy } from 'lucide-react';
 import './StudentPortal.css';
 
-// Real events will be fetched from API
+
 
 const StudentEventList = () => {
   const { id: collegeId } = useParams();
@@ -48,16 +48,18 @@ const StudentEventList = () => {
   };
 
   return (
-    <div className="student-portal">
+    <div className="student-portal-container">
       <div className="container">
-        <Link to="/students/colleges" className="back-link" style={{ marginBottom: '2rem', display: 'inline-flex' }}>
-          <ArrowLeft size={20} /> Back to Colleges
-        </Link>
+        <div className="back-arrow-wrapper">
+          <Link to="/students/colleges" className="back-link" style={{ marginBottom: '2rem', display: 'inline-flex' }} title="Back to Colleges">
+            <ArrowLeft className="back-arrow-icon" strokeWidth={3} color="#fff" />
+          </Link>
+        </div>
         
         <div className="dashboard-header">
           <div className="header-info">
-            <h1 className="college-title">{college.collegeName} Events</h1>
-            <p className="college-subtitle">Select an event to view schedules, results, and point tables</p>
+            <h1 className="student-title">{college.collegeName} Events</h1>
+            <p className="student-subtitle">Select an event to view schedules, results, and point tables</p>
           </div>
         </div>
 

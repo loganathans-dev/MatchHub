@@ -70,9 +70,9 @@ const AdminSignIn = () => {
             <label className="admin-form-label">Admin Email</label>
             <div className="admin-input-wrapper">
               <input
-                type="email"
+                type="text"
                 className="admin-form-input"
-                placeholder="admin@system.local"
+                placeholder="admin"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />

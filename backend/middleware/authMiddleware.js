@@ -13,6 +13,11 @@ const protect = async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       
       req.college = await College.findById(decoded.id).select('-password');
+      
+      if (!req.college) {
+        return res.status(401).json({ message: 'Not authorized, college not found' });
+      }
+
       next();
     } catch (error) {
       console.error(error);

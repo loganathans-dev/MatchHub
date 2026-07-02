@@ -3,7 +3,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, MapPin, Trophy } from 'lucide-react';
 import '../../styles/Auth.css';
 
-// Real events will be fetched from API
+
 
 const EventList = () => {
   const [events, setEvents] = useState([]);

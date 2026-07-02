@@ -221,7 +221,7 @@ body {
 
 @media (max-width: 768px) {
   .auth-container {
-    padding: 20px 12px;
+    padding: 16px 12px;
   }
   
   .auth-card {
@@ -230,11 +230,12 @@ body {
   
   .auth-title {
     font-size: 22px;
+    text-align: left;
   }
   
   .responsive-flex-header {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 16px;
   }
 
@@ -246,9 +247,58 @@ body {
   
   .btn-primary {
     width: 100%;
+    margin-top: 16px;
   }
 
   .align-right-mobile {
-    align-self: flex-end;
+    align-self: flex-start;
+    width: 100%;
+    justify-content: center;
   }
+
+  /* Hamburger Menu Styles */
+  .desktop-nav {
+    display: none !important;
+  }
+  
+  .mobile-menu-btn {
+    display: flex !important;
+    align-items: center;
+    background: transparent;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .mobile-nav-dropdown {
+    display: flex !important;
+    flex-direction: column;
+    gap: 4px;
+    background: rgba(15, 23, 42, 0.98);
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    padding: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.8);
+    box-sizing: border-box;
+  }
+}
+
+/* Default state for mobile nav elements (desktop view) */
+.mobile-menu-btn {
+  display: none;
+}
+
+.mobile-nav-dropdown {
+  display: none;
+}
+
+.desktop-nav {
+  display: flex;
+  gap: 8px;
 }

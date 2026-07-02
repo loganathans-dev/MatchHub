@@ -37,6 +37,39 @@ const SportsDayEvent = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleDateTimeChange = (field, type, value) => {
+    setFormData(prev => {
+      const currentVal = prev[field] || '';
+      let datePart = '';
+      let timePart = '';
+      
+      if (currentVal.includes('T')) {
+        [datePart, timePart] = currentVal.split('T');
+      } else {
+        datePart = currentVal;
+      }
+
+      if (type === 'date') {
+        datePart = value;
+        if (datePart && !timePart) {
+          timePart = field === 'startDate' ? '09:00' : '17:00';
+        }
+      } else if (type === 'time') {
+        timePart = value;
+        if (timePart && !datePart) {
+          const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+          datePart = (new Date(Date.now() - tzOffset)).toISOString().split('T')[0];
+        }
+      }
+
+      if (!datePart && !timePart) {
+        return { ...prev, [field]: '' };
+      }
+
+      return { ...prev, [field]: `${datePart}T${timePart}` };
+    });
+  };
+
   const handleSportToggle = (sportId) => {
     setFormData(prev => {
       const currentSports = prev.sportsIds;
@@ -65,6 +98,12 @@ const SportsDayEvent = () => {
       return;
     }
 
+    if (!formData.startDate.includes('T') || !formData.startDate.split('T')[0] || !formData.startDate.split('T')[1] ||
+        !formData.endDate.includes('T') || !formData.endDate.split('T')[0] || !formData.endDate.split('T')[1]) {
+      setError('Please provide both valid date and time for start and end.');
+      return;
+    }
+
     if (new Date(formData.endDate) <= new Date(formData.startDate)) {
       setError('End date/time must be after the start date/time.');
       return;
@@ -77,6 +116,7 @@ const SportsDayEvent = () => {
 
     const payload = {
       title: formData.title,
+      eventTitle: formData.title,
       startDate: formData.startDate,
       endDate: formData.endDate,
       sportsList: sportsNames,
@@ -143,25 +183,41 @@ const SportsDayEvent = () => {
           <div className="form-grid">
             <div className="form-group">
               <label className="form-label">Event Start Date & Time *</label>
-              <input
-                type="datetime-local"
-                name="startDate"
-                className="form-input"
-                value={formData.startDate}
-                onChange={handleInputChange}
-                required
-              />
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={formData.startDate ? formData.startDate.split('T')[0] : ''}
+                  onChange={(e) => handleDateTimeChange('startDate', 'date', e.target.value)}
+                  required
+                />
+                <input
+                  type="time"
+                  className="form-input"
+                  value={formData.startDate && formData.startDate.includes('T') ? formData.startDate.split('T')[1] : ''}
+                  onChange={(e) => handleDateTimeChange('startDate', 'time', e.target.value)}
+                  required
+                />
+              </div>
             </div>
             <div className="form-group">
               <label className="form-label">Event End Date & Time *</label>
-              <input
-                type="datetime-local"
-                name="endDate"
-                className="form-input"
-                value={formData.endDate}
-                onChange={handleInputChange}
-                required
-              />
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={formData.endDate ? formData.endDate.split('T')[0] : ''}
+                  onChange={(e) => handleDateTimeChange('endDate', 'date', e.target.value)}
+                  required
+                />
+                <input
+                  type="time"
+                  className="form-input"
+                  value={formData.endDate && formData.endDate.includes('T') ? formData.endDate.split('T')[1] : ''}
+                  onChange={(e) => handleDateTimeChange('endDate', 'time', e.target.value)}
+                  required
+                />
+              </div>
             </div>
           </div>
 

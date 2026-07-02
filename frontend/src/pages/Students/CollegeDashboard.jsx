@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Building2, MapPin, Calendar, Trophy, Medal, Flag } from 'lucide-react';
 import './StudentPortal.css';
 
-// Real data will be dynamically fetched from APIs
+
 
 const CollegeDashboard = () => {
   const { collegeId, eventId } = useParams();
@@ -71,9 +71,11 @@ const CollegeDashboard = () => {
 
   return (
     <div className="student-portal-container" style={{ paddingBottom: '4rem' }}>
-      <Link to={`/students/colleges/${collegeId}`} className="back-link">
-        <ArrowLeft size={18} /> Back to Events
-      </Link>
+      <div className="back-arrow-wrapper">
+        <Link to={`/students/colleges/${collegeId}`} className="back-link" title="Back to Events">
+          <ArrowLeft className="back-arrow-icon" strokeWidth={3} color="#fff" />
+        </Link>
+      </div>
 
       <div className="college-dashboard-container">
         
@@ -187,9 +189,6 @@ const CollegeDashboard = () => {
                     <tr>
                       <th>Rank</th>
                       <th>Department</th>
-                      <th>Gold (10pt)</th>
-                      <th>Silver (5pt)</th>
-                      <th>Bronze (2pt)</th>
                       <th>Total Points</th>
                     </tr>
                   </thead>
@@ -202,9 +201,6 @@ const CollegeDashboard = () => {
                            dept.rank === 3 && dept.totalPoints > 0 ? <Medal size={20} color="#b45309"/> : dept.rank}
                         </td>
                         <td className="dept-name">{dept.dept}</td>
-                        <td>{dept.gold}</td>
-                        <td>{dept.silver}</td>
-                        <td>{dept.bronze}</td>
                         <td className="points-value">{dept.totalPoints}</td>
                       </tr>
                     ))}
@@ -220,9 +216,9 @@ const CollegeDashboard = () => {
                   <thead>
                     <tr>
                       <th>Sport / Game</th>
-                      <th style={{ color: '#fbbf24' }}>🥇 Gold</th>
-                      <th style={{ color: '#94a3b8' }}>🥈 Silver</th>
-                      <th style={{ color: '#b45309' }}>🥉 Bronze</th>
+                      <th style={{ color: '#fbbf24' }}>🥇 Winner</th>
+                      <th style={{ color: '#94a3b8' }}>🥈 Runner-up</th>
+                      <th style={{ color: '#b45309' }}>🥉 3rd Place</th>
                     </tr>
                   </thead>
                   <tbody>

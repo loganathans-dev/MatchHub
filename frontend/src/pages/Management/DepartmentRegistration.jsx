@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import '../../styles/Auth.css';
-import { AVAILABLE_SPORTS } from '../../utils/constants';
+import { AVAILABLE_SPORTS, AVAILABLE_DEPARTMENTS } from '../../utils/constants';
 
 const DepartmentRegistration = () => {
   const [formData, setFormData] = useState({
@@ -14,15 +14,21 @@ const DepartmentRegistration = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const [isDeptDropdownOpen, setIsDeptDropdownOpen] = useState(false);
+  const deptDropdownRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
   const eventId = location.state?.eventId;
   const [eventSports, setEventSports] = useState([]);
+  const [existingDepartments, setExistingDepartments] = useState(AVAILABLE_DEPARTMENTS);
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
+      }
+      if (deptDropdownRef.current && !deptDropdownRef.current.contains(event.target)) {
+        setIsDeptDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -33,8 +39,12 @@ const DepartmentRegistration = () => {
 
   // Fetch event sports
   useEffect(() => {
+    if (!eventId) {
+      navigate('/management/event-list', { state: { action: 'department' } });
+      return;
+    }
+
     const fetchEventSports = async () => {
-      if (!eventId) return;
       try {
         const token = localStorage.getItem('token');
         const response = await fetch('/api/events', {
@@ -58,6 +68,27 @@ const DepartmentRegistration = () => {
     };
     fetchEventSports();
   }, [eventId]);
+
+  // Fetch historically registered departments from DB to add to the autocomplete list
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/departments', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const dbDeptNames = data.map(d => d.name).filter(Boolean);
+          const combined = [...new Set([...AVAILABLE_DEPARTMENTS, ...dbDeptNames])].sort();
+          setExistingDepartments(combined);
+        }
+      } catch (err) {
+        console.error('Failed to fetch departments', err);
+      }
+    };
+    fetchDepartments();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -151,17 +182,109 @@ const DepartmentRegistration = () => {
         <form className="auth-form" onSubmit={handleSubmit}>
           {error && <div className="error-message">{error}</div>}
 
-          <div className="form-group full-width">
+          <div className="form-group full-width" style={{ position: 'relative' }} ref={deptDropdownRef}>
             <label className="form-label">Department Name *</label>
-            <input 
-              type="text" 
-              name="departmentName" 
-              className="form-input" 
-              placeholder="e.g. Computer Science (CSE)"
-              value={formData.departmentName}
-              onChange={handleInputChange}
-              required 
-            />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input 
+                type="text" 
+                name="departmentName" 
+                className="form-input" 
+                placeholder="Search or select a department..."
+                value={formData.departmentName}
+                onChange={(e) => {
+                  handleInputChange(e);
+                  setIsDeptDropdownOpen(true);
+                }}
+                onFocus={() => setIsDeptDropdownOpen(true)}
+                autoComplete="off"
+                required 
+              />
+              <button 
+                type="button" 
+                className="btn-primary" 
+                style={{ width: 'auto', margin: 0, padding: '0 24px', whiteSpace: 'nowrap', fontSize: '14px' }}
+                onClick={() => {
+                  const customName = formData.departmentName.trim();
+                  if (customName) {
+                    if (!existingDepartments.some(d => d && d.toLowerCase() === customName.toLowerCase())) {
+                      setExistingDepartments(prev => [...prev, customName].sort());
+                    }
+                    setIsDeptDropdownOpen(false);
+                  }
+                }}
+              >
+                + Add
+              </button>
+            </div>
+
+            {isDeptDropdownOpen && (
+              <div style={{
+                position: 'absolute',
+                top: '75px',
+                left: 0,
+                right: 0,
+                maxWidth: '400px',
+                maxHeight: '200px',
+                overflowY: 'auto',
+                background: 'var(--bg-dark)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '12px',
+                zIndex: 20,
+                boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                display: 'flex',
+                flexDirection: 'column'
+              }}>
+                {existingDepartments
+                  .filter(dept => dept && dept.toLowerCase().includes(formData.departmentName.toLowerCase()))
+                  .map(dept => (
+                    <div 
+                      key={dept}
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, departmentName: dept }));
+                        setIsDeptDropdownOpen(false);
+                      }}
+                      style={{
+                        padding: '12px 16px',
+                        cursor: 'pointer',
+                        borderBottom: '1px solid var(--border-color)',
+                        color: 'var(--text-main)',
+                        fontSize: '14px',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.target.style.background = 'var(--input-bg)'}
+                      onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                    >
+                      {dept}
+                    </div>
+                  ))}
+                  {formData.departmentName.trim() !== '' && !existingDepartments.some(dept => dept && dept.toLowerCase() === formData.departmentName.trim().toLowerCase()) && (
+                    <div 
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, departmentName: formData.departmentName.trim() }));
+                        setIsDeptDropdownOpen(false);
+                      }}
+                      style={{
+                        padding: '12px 16px',
+                        cursor: 'pointer',
+                        borderBottom: '1px solid var(--border-color)',
+                        color: 'var(--primary-color)',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.target.style.background = 'rgba(59, 130, 246, 0.1)'}
+                      onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                    >
+                      + Add "{formData.departmentName.trim()}" as new department
+                    </div>
+                  )}
+                  {formData.departmentName.trim() === '' && (
+                    <div style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: '13px', fontStyle: 'italic', borderTop: '1px solid var(--border-color)' }}>
+                      Start typing to add a custom department...
+                    </div>
+                  )}
+              </div>
+            )}
           </div>
 
           <div className="form-group full-width" style={{ position: 'relative' }} ref={dropdownRef}>

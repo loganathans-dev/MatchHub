@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import ManagementLayout from './components/ManagementLayout';
 import AdminSignIn from './pages/Admin/AdminSignIn';
 import AdminDashboard from './pages/Admin/AdminDashboard';
 import CollegeList from './pages/Students/CollegeList';
@@ -36,14 +37,16 @@ function App() {
         <Route path="/management/registration" element={<Registration />} />
         
         {/* Management Dashboard/Settings Routes */}
-        <Route path="/management/home" element={<ManagementHome />} />
-        <Route path="/management/event-list" element={<EventList />} />
-        <Route path="/management/sports-day-event" element={<SportsDayEvent />} />
-        <Route path="/management/department-registration" element={<DepartmentRegistration />} />
-        <Route path="/management/match-schedule" element={<MatchSchedule />} />
-        <Route path="/management/scheduled-matches" element={<ScheduledMatchesList />} />
-        <Route path="/management/match-result" element={<MatchResult />} />
-        <Route path="/management/points-table" element={<PointsTable />} />
+        <Route element={<ManagementLayout />}>
+          <Route path="/management/home" element={<ManagementHome />} />
+          <Route path="/management/event-list" element={<EventList />} />
+          <Route path="/management/sports-day-event" element={<SportsDayEvent />} />
+          <Route path="/management/department-registration" element={<DepartmentRegistration />} />
+          <Route path="/management/match-schedule" element={<MatchSchedule />} />
+          <Route path="/management/scheduled-matches" element={<ScheduledMatchesList />} />
+          <Route path="/management/match-result" element={<MatchResult />} />
+          <Route path="/management/points-table" element={<PointsTable />} />
+        </Route>
 
         {/* Default route redirects to students portal */}
         <Route path="*" element={<Navigate to="/students/colleges" replace />} />

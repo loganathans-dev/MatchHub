@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, MapPin, Building2 } from 'lucide-react';
 import './StudentPortal.css';
 
-// Real colleges will be fetched from API
+
 
 const CollegeList = () => {
   const [colleges, setColleges] = useState([]);

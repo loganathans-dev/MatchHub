@@ -43,3 +43,25 @@ export const AVAILABLE_SPORTS = [
   { id: 'at-11', name: 'Discus Throw', type: 'athletics' },
   { id: 'at-12', name: 'Javelin Throw', type: 'athletics' }
 ];
+
+export const AVAILABLE_DEPARTMENTS = [
+  'Computer Science and Engineering (CSE)',
+  'Information Technology (IT)',
+  'Electronics and Communication Engineering (ECE)',
+  'Electrical and Electronics Engineering (EEE)',
+  'Mechanical Engineering (ME)',
+  'Civil Engineering (CE)',
+  'Artificial Intelligence and Data Science (AI&DS)',
+  'Artificial Intelligence and Machine Learning (AI&ML)',
+  'Biomedical Engineering (BME)',
+  'Biotechnology (BT)',
+  'Chemical Engineering (ChemE)',
+  'Aerospace Engineering (AE)',
+  'Automobile Engineering (AutoE)',
+  'Mechatronics Engineering',
+  'Robotics and Automation',
+  'Master of Business Administration (MBA)',
+  'Master of Computer Applications (MCA)',
+  'Science and Humanities (S&H)',
+  'Architecture (B.Arch)'
+];

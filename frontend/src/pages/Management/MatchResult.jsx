@@ -7,6 +7,7 @@ const MatchResult = () => {
   const location = useLocation();
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
+  const eventId = location.state?.eventId;
   const [selectedMatchId, setSelectedMatchId] = useState(location.state?.matchId || '');
   
   // State for Team Matches
@@ -20,10 +21,15 @@ const MatchResult = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!eventId) {
+      navigate('/management/event-list', { state: { action: 'results' } });
+      return;
+    }
+
     const fetchMatches = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('/api/matches', {
+        const response = await fetch(`/api/matches${eventId ? `?eventId=${eventId}` : ''}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) {
@@ -39,7 +45,7 @@ const MatchResult = () => {
       }
     };
     fetchMatches();
-  }, []);
+  }, [eventId]);
 
   const selectedMatch = matches.find(m => m.id === selectedMatchId);
 
@@ -52,7 +58,7 @@ const MatchResult = () => {
     setRanks({ rank1: '', rank2: '', rank3: '' });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -76,8 +82,8 @@ const MatchResult = () => {
         score_team_a: teamScores.teamA,
         score_team_b: teamScores.teamB,
         winner_id: winnerId,
-        runner_id: winnerId === selectedMatch.teamA.id ? selectedMatch.teamB.id : 
-                   (winnerId === selectedMatch.teamB.id ? selectedMatch.teamA.id : null)
+        runner_id: winnerId === selectedMatch.teamA._id ? selectedMatch.teamB._id : 
+                   (winnerId === selectedMatch.teamB._id ? selectedMatch.teamA._id : null)
       };
     } else {
       if (!ranks.rank1 || !ranks.rank2) {
@@ -104,7 +110,7 @@ const MatchResult = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const response =  fetch(`/api/matches/${selectedMatch.id}`, {
+      const response = await fetch(`/api/matches/${selectedMatch.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -112,7 +118,9 @@ const MatchResult = () => {
         },
         body: JSON.stringify({
           status: 'Completed',
-          winner: payload.winner_id || payload.rank_1_id,
+          winner: payload.winner_id === 'draw' ? null : (payload.winner_id || payload.rank_1_id),
+          runner: payload.runner_id || payload.rank_2_id || null,
+          thirdPlace: payload.rank_3_id || null,
           score: payload.score_team_a ? `${payload.score_team_a} - ${payload.score_team_b}` : 'Ranked'
         })
       });
@@ -191,8 +199,8 @@ const MatchResult = () => {
                   required
                 >
                   <option value="" disabled>Select the winning team...</option>
-                  <option value={selectedMatch.teamA.id}>{selectedMatch.teamA.name} (Winner)</option>
-                  <option value={selectedMatch.teamB.id}>{selectedMatch.teamB.name} (Winner)</option>
+                  <option value={selectedMatch.teamA._id}>{selectedMatch.teamA.name} (Winner)</option>
+                  <option value={selectedMatch.teamB._id}>{selectedMatch.teamB.name} (Winner)</option>
                   <option value="draw">Match Drawn / Tie</option>
                 </select>
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>The other team will automatically be marked as Runner-up.</p>
@@ -214,7 +222,7 @@ const MatchResult = () => {
                 >
                   <option value="" disabled>Select Rank 1</option>
                   {selectedMatch.participants.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
+                    <option key={p._id} value={p._id}>{p.name}</option>
                   ))}
                 </select>
               </div>
@@ -229,7 +237,7 @@ const MatchResult = () => {
                 >
                   <option value="" disabled>Select Rank 2</option>
                   {selectedMatch.participants.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
+                    <option key={p._id} value={p._id}>{p.name}</option>
                   ))}
                 </select>
               </div>
@@ -243,7 +251,7 @@ const MatchResult = () => {
                 >
                   <option value="">None / Not Applicable</option>
                   {selectedMatch.participants.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
+                    <option key={p._id} value={p._id}>{p.name}</option>
                   ))}
                 </select>
               </div>
