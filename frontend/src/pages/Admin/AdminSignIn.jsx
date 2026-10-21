@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { request } from '../../utils/request';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import './AdminSignIn.css';
@@ -23,7 +24,7 @@ const AdminSignIn = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/admin/login`, {
+      const response = await request(`${import.meta.env.VITE_API_URL || ""}/api/admin/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -65,7 +66,7 @@ const AdminSignIn = () => {
               {error}
             </div>
           )}
-          
+
           <div className="admin-form-group">
             <label className="admin-form-label">Admin Email</label>
             <div className="admin-input-wrapper">
@@ -89,8 +90,8 @@ const AdminSignIn = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="admin-toggle-password"
                 onClick={() => setShowPassword(!showPassword)}
               >

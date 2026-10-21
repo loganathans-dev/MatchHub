@@ -1,11 +1,10 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  CalendarDays, 
-  Users, 
-  ClipboardList, 
-  Trophy, 
-  Medal, 
+import {
+  CalendarDays,
+  Users,
+  ClipboardList,
+  Trophy,
+  Medal,
   LogOut,
   CalendarCheck
 } from 'lucide-react';
@@ -15,20 +14,21 @@ const ManagementHome = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Perform any logout logic here
+    localStorage.removeItem('token');
+    localStorage.removeItem('collegeInfo');
     navigate('/management/signin');
   };
 
   const navItems = [
     {
       title: 'Sports Day Event',
-      description: 'Configure event dates, sports list, and max participants.',
+      description: 'Create events with dates, a sports list, and event information.',
       icon: <CalendarDays size={32} color="#38bdf8" />,
       path: '/management/sports-day-event'
     },
     {
       title: 'Department Registration',
-      description: 'Register departments and allocate team captains.',
+      description: 'Register departments for selected event sports.',
       icon: <Users size={32} color="#818cf8" />,
       path: '/management/event-list',
       state: { action: 'department' }
@@ -42,7 +42,7 @@ const ManagementHome = () => {
     },
     {
       title: 'Scheduled Matches',
-      description: 'View and update status of all upcoming matches.',
+      description: 'View scheduled fixtures by event, sport, and date.',
       icon: <CalendarCheck size={32} color="#34d399" />,
       path: '/management/event-list',
       state: { action: 'matches' }
@@ -66,17 +66,17 @@ const ManagementHome = () => {
   return (
     <div className="auth-container" style={{ alignItems: 'flex-start', paddingTop: '4rem' }}>
       <div style={{ maxWidth: '1200px', width: '100%', margin: '0 auto' }}>
-        
+
         <header className="responsive-flex-header" style={{ marginBottom: '3rem' }}>
           <div>
             <h1 className="auth-title" style={{ textAlign: 'left', marginBottom: '0.5rem' }}>Management Dashboard</h1>
             <p className="auth-subtitle" style={{ textAlign: 'left' }}>Central control panel for your college sports event</p>
           </div>
-          <button 
+          <button
             onClick={handleLogout}
             className="align-right-mobile"
-            style={{ 
-              display: 'flex', alignItems: 'center', gap: '0.5rem', 
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
               background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
               padding: '0.5rem 1rem', borderRadius: '8px', color: '#f8fafc',
               cursor: 'pointer', transition: 'all 0.2s', fontWeight: 500, fontSize: '0.875rem'
@@ -94,9 +94,11 @@ const ManagementHome = () => {
           gap: '1.5rem'
         }}>
           {navItems.map((item, index) => (
-            <div 
+            <div
               key={index}
               onClick={() => navigate(item.path, { state: item.state })}
+              role="link" tabIndex={0}
+              onKeyDown={e => { if (e.key === "Enter") navigate(item.path, { state: item.state }); }}
               style={{
                 background: 'rgba(255, 255, 255, 0.03)',
                 backdropFilter: 'blur(20px)',

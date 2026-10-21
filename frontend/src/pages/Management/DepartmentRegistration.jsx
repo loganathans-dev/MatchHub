@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { request } from '../../utils/request';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import '../../styles/Auth.css';
@@ -9,7 +10,7 @@ const DepartmentRegistration = () => {
     departmentName: '',
     sportsIds: []
   });
-  
+
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -47,7 +48,7 @@ const DepartmentRegistration = () => {
     const fetchEventSports = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('/api/events', {
+        const response = await request(`${import.meta.env.VITE_API_URL || ""}/api/events`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) {
@@ -67,14 +68,14 @@ const DepartmentRegistration = () => {
       }
     };
     fetchEventSports();
-  }, [eventId]);
+  }, [eventId, navigate]);
 
   // Fetch historically registered departments from DB to add to the autocomplete list
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('/api/departments', {
+        const response = await request(`${import.meta.env.VITE_API_URL || ""}/api/departments`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) {
@@ -125,15 +126,15 @@ const DepartmentRegistration = () => {
 
     const payload = {
       name: formData.departmentName,
-      registeredSports: formData.sportsIds,
+      registeredSports: formData.sportsIds.map(id => eventSports.find(s => s.id === id)?.name).filter(Boolean),
       eventId: eventId
     };
 
     console.log(`Submitting Department Registration (${action}):`, payload);
-    
+
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/departments', {
+      const response = await request(`${import.meta.env.VITE_API_URL || ""}/api/departments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -185,10 +186,10 @@ const DepartmentRegistration = () => {
           <div className="form-group full-width" style={{ position: 'relative' }} ref={deptDropdownRef}>
             <label className="form-label">Department Name *</label>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <input 
-                type="text" 
-                name="departmentName" 
-                className="form-input" 
+              <input
+                type="text"
+                name="departmentName"
+                className="form-input"
                 placeholder="Search or select a department..."
                 value={formData.departmentName}
                 onChange={(e) => {
@@ -197,11 +198,11 @@ const DepartmentRegistration = () => {
                 }}
                 onFocus={() => setIsDeptDropdownOpen(true)}
                 autoComplete="off"
-                required 
+                required
               />
-              <button 
-                type="button" 
-                className="btn-primary" 
+              <button
+                type="button"
+                className="btn-primary"
                 style={{ width: 'auto', margin: 0, padding: '0 24px', whiteSpace: 'nowrap', fontSize: '14px' }}
                 onClick={() => {
                   const customName = formData.departmentName.trim();
@@ -237,7 +238,7 @@ const DepartmentRegistration = () => {
                 {existingDepartments
                   .filter(dept => dept && dept.toLowerCase().includes(formData.departmentName.toLowerCase()))
                   .map(dept => (
-                    <div 
+                    <div
                       key={dept}
                       onClick={() => {
                         setFormData(prev => ({ ...prev, departmentName: dept }));
@@ -258,7 +259,7 @@ const DepartmentRegistration = () => {
                     </div>
                   ))}
                   {formData.departmentName.trim() !== '' && !existingDepartments.some(dept => dept && dept.toLowerCase() === formData.departmentName.trim().toLowerCase()) && (
-                    <div 
+                    <div
                       onClick={() => {
                         setFormData(prev => ({ ...prev, departmentName: formData.departmentName.trim() }));
                         setIsDeptDropdownOpen(false);
@@ -288,9 +289,9 @@ const DepartmentRegistration = () => {
           </div>
 
           <div className="form-group full-width" style={{ position: 'relative' }} ref={dropdownRef}>
-            <label className="form-label" style={{ marginBottom: '8px' }}>Participating Sports *</label>
-            
-            <input 
+            <label className="form-label" style={{ marginBottom: '8px' }} htmlFor="departmentregistration-field-1">Participating Sports *</label>
+
+            <input id="departmentregistration-field-1"
               type="text"
               className="form-input"
               placeholder="Type to search for a sport... (e.g. Cricket, 100m)"
@@ -321,7 +322,7 @@ const DepartmentRegistration = () => {
                 flexDirection: 'column'
               }}>
                 {filteredSports.map(sport => (
-                  <div 
+                  <div
                     key={sport.id}
                     onClick={() => handleAddSport(sport.id)}
                     style={{
@@ -340,7 +341,7 @@ const DepartmentRegistration = () => {
                 ))}
               </div>
             )}
-            
+
             {isDropdownOpen && filteredSports.length === 0 && (
               <div style={{
                 position: 'absolute',
@@ -362,8 +363,8 @@ const DepartmentRegistration = () => {
 
             {formData.sportsIds.length > 0 && (
               <div style={{
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', 
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
                 gap: '12px',
                 background: 'var(--input-bg)',
                 padding: '16px',
@@ -375,8 +376,8 @@ const DepartmentRegistration = () => {
                   const sport = eventSports.find(s => s.id === sportId) || AVAILABLE_SPORTS.find(s => s.id === sportId);
                   return (
                     <label key={sportId} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: 'white', fontSize: '14px' }}>
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         checked={true}
                         onChange={() => handleSportToggle(sportId)}
                         style={{ width: '18px', height: '18px', accentColor: 'var(--primary-color)' }}
@@ -391,17 +392,17 @@ const DepartmentRegistration = () => {
           </div>
 
           <div style={{ display: 'flex', gap: '16px', marginTop: '24px' }}>
-            <button 
-              type="button" 
-              className="btn-primary" 
+            <button
+              type="button"
+              className="btn-primary"
               style={{ flex: 1, background: 'transparent', border: '1px solid var(--primary-color)', color: 'var(--primary-color)', marginTop: 0 }}
               onClick={(e) => handleSubmit(e, 'add_another')}
             >
               Save & Add Another
             </button>
-            <button 
-              type="button" 
-              className="btn-primary" 
+            <button
+              type="button"
+              className="btn-primary"
               style={{ flex: 1, marginTop: 0 }}
               onClick={(e) => handleSubmit(e, 'save_and_redirect')}
             >

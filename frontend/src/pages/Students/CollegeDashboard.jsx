@@ -1,3 +1,5 @@
+import { request } from '../../utils/request';
+import { calculatePoints, placements } from '../../utils/points';
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Building2, MapPin, Calendar, Trophy, Medal, Flag } from 'lucide-react';
@@ -18,14 +20,14 @@ const CollegeDashboard = () => {
     const fetchDashboardData = async () => {
       try {
         const [colRes, deptRes, matchRes] = await Promise.all([
-          fetch(`${import.meta.env.VITE_API_URL || ""}/api/public/colleges/${collegeId}`),
-          fetch(`${import.meta.env.VITE_API_URL || ""}/api/public/colleges/${collegeId}/departments`),
-          fetch(`${import.meta.env.VITE_API_URL || ""}/api/public/colleges/${collegeId}/matches`)
+          request(`${import.meta.env.VITE_API_URL || ""}/api/public/colleges/${collegeId}`),
+          request(`${import.meta.env.VITE_API_URL || ""}/api/public/colleges/${collegeId}/departments?eventId=${eventId}`),
+          request(`${import.meta.env.VITE_API_URL || ""}/api/public/colleges/${collegeId}/matches?eventId=${eventId}`)
         ]);
 
         if (colRes.ok) setCollege(await colRes.json());
-        if (deptRes.ok) setDepartments(await deptRes.json());
-        if (matchRes.ok) setMatches(await matchRes.json());
+        if (deptRes.ok) setDepartments((await deptRes.json()).filter(d => (d.event?._id || d.event) === eventId));
+        if (matchRes.ok) setMatches((await matchRes.json()).filter(m => (m.event?._id || m.event) === eventId));
       } catch (err) {
         console.error('Error fetching dashboard data', err);
       } finally {
@@ -33,41 +35,20 @@ const CollegeDashboard = () => {
       }
     };
     fetchDashboardData();
-  }, [collegeId]);
+  }, [collegeId, eventId]);
 
-  if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: '#fff' }}>Loading College Dashboard...</div>;
+  if (loading) return null;
   if (!college) return <div style={{ padding: '40px', textAlign: 'center', color: '#fff' }}>College not found.</div>;
 
   const scheduledMatches = matches.filter(m => m.status !== 'Completed');
   const results = matches.filter(m => m.status === 'Completed');
 
-  // Compute Points
-  const pointsMap = {};
-  departments.forEach(d => {
-    pointsMap[d.name] = { dept: d.name, gold: 0, silver: 0, bronze: 0, totalPoints: 0 };
+  const pointsTable = calculatePoints(departments, matches);
+  const names = new Map(departments.map(d => [d._id, d.name]));
+  const gameWiseResults = results.map(m => {
+    const [gold, silver, bronze] = placements(m).map(value => names.get(value) || '-');
+    return { sport: m.sportName, gold, silver, bronze };
   });
-
-  const gameWiseResults = [];
-
-  results.forEach(m => {
-    if (m.winner) {
-      const winnerName = m.winner.name;
-      if (pointsMap[winnerName]) {
-        pointsMap[winnerName].gold += 1;
-        pointsMap[winnerName].totalPoints += 10;
-      }
-      gameWiseResults.push({
-        sport: m.sportName,
-        gold: winnerName,
-        silver: m.type === 'team' ? (m.teamA.name === winnerName ? m.teamB?.name : m.teamA?.name) : '-',
-        bronze: '-'
-      });
-    }
-  });
-
-  const pointsTable = Object.values(pointsMap)
-    .sort((a, b) => b.totalPoints - a.totalPoints)
-    .map((p, index) => ({ ...p, rank: index + 1 }));
 
   return (
     <div className="student-portal-container" style={{ paddingBottom: '4rem' }}>
@@ -78,7 +59,7 @@ const CollegeDashboard = () => {
       </div>
 
       <div className="college-dashboard-container">
-        
+
         {/* College Header */}
         <div className="college-header-card">
           <div className="student-college-icon" style={{ marginBottom: 0, width: '100px', height: '100px' }}>
@@ -108,20 +89,20 @@ const CollegeDashboard = () => {
 
         {/* Tab Content */}
         <div className="tab-content-area">
-          
+
           {/* 1. Details Tab */}
           {activeTab === 'details' && (
-            <div style={{ display: 'grid', gap: '2rem', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+            <div style={{ display: 'grid', gap: '2rem', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))' }}>
               <div>
                 <h3 style={{ color: '#818cf8', marginBottom: '1rem' }}>Institution Address</h3>
-                <p style={{ color: '#f8fafc', margin: '0 0 0.5rem 0' }}>{college.address}</p>
-                <p style={{ color: '#94a3b8', margin: '0 0 0.5rem 0' }}>{college.city}, {college.state} - {college.pincode}</p>
+                <p style={{ color: '#f8fafc', margin: '0 0 0.5rem 0' }}>{college.district || college.city}</p>
+                <p style={{ color: '#94a3b8', margin: '0 0 0.5rem 0' }}>{college.city}, {college.state}</p>
                 {college.location && <p style={{ color: '#38bdf8', fontSize: '0.875rem' }}><MapPin size={14} style={{display:'inline'}}/> Coordinates: {college.location}</p>}
               </div>
               <div>
-                <h3 style={{ color: '#818cf8', marginBottom: '1rem' }}>Sports Coordinator</h3>
-                <p style={{ color: '#f8fafc', margin: '0 0 0.5rem 0' }}>{college.coordinatorName}</p>
-                <p style={{ color: '#94a3b8', margin: '0' }}>{college.coordinatorMobile}</p>
+                <h3 style={{ color: '#818cf8', marginBottom: '1rem' }}>Sports Institution</h3>
+                <p style={{ color: '#f8fafc', margin: '0 0 0.5rem 0' }}>{college.collegeType}</p>
+                <p style={{ color: '#94a3b8', margin: '0' }}>{college.collegeCode}</p>
               </div>
               <div>
                 <h3 style={{ color: '#818cf8', marginBottom: '1rem' }}>Participating Departments</h3>
@@ -196,8 +177,8 @@ const CollegeDashboard = () => {
                     {pointsTable.map(dept => (
                       <tr key={dept.dept}>
                         <td>
-                          {dept.rank === 1 && dept.totalPoints > 0 ? <Trophy size={20} color="#fbbf24"/> : 
-                           dept.rank === 2 && dept.totalPoints > 0 ? <Medal size={20} color="#94a3b8"/> : 
+                          {dept.rank === 1 && dept.totalPoints > 0 ? <Trophy size={20} color="#fbbf24"/> :
+                           dept.rank === 2 && dept.totalPoints > 0 ? <Medal size={20} color="#94a3b8"/> :
                            dept.rank === 3 && dept.totalPoints > 0 ? <Medal size={20} color="#b45309"/> : dept.rank}
                         </td>
                         <td className="dept-name">{dept.dept}</td>

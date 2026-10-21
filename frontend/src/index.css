@@ -109,3 +109,14 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+/* Application layout and keyboard focus. */
+#root { width: 100%; border: 0; text-align: left; }
+* { box-sizing: border-box; }
+:focus-visible { outline: 3px solid #38bdf8; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+@media (max-width: 480px) { .auth-card { padding: 20px 14px !important; } }
+
+h1, h2 { color: var(--text-main, #f8fafc); }

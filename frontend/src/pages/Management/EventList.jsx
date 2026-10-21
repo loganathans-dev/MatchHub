@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { request } from '../../utils/request';
+import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, MapPin, Trophy } from 'lucide-react';
 import '../../styles/Auth.css';
@@ -15,7 +16,7 @@ const EventList = () => {
     const fetchEvents = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/events`, {
+        const response = await request(`${import.meta.env.VITE_API_URL || ""}/api/events`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) {
@@ -24,7 +25,7 @@ const EventList = () => {
             id: e._id,
             title: e.title,
             date: new Date(e.startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-            venue: 'Main College Ground',
+            venue: 'Venue not specified',
             status: e.status || 'Upcoming'
           }));
           setEvents(formatted);
@@ -87,9 +88,9 @@ const EventList = () => {
           <p className="auth-subtitle">Please select an event to continue</p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '24px' }}>
           {loading ? (
-            <div style={{ color: 'var(--text-muted)' }}>Loading events...</div>
+            null
           ) : events.length === 0 ? (
             <div style={{ color: 'var(--text-muted)' }}>No events found.</div>
           ) : (
@@ -97,6 +98,8 @@ const EventList = () => {
               <div
                 key={event.id}
                 onClick={() => handleEventClick(event.id)}
+              role="link" tabIndex={0}
+              onKeyDown={e => { if (e.key === "Enter") handleEventClick(event.id); }}
                 style={{
                   background: 'var(--input-bg)',
                   border: '1px solid var(--border-color)',

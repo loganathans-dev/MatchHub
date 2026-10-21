@@ -24,4 +24,6 @@ const matchSchema = new mongoose.Schema({
   timestamps: true
 });
 
+matchSchema.index({ event: 1, dateTime: 1 });
+
 module.exports = mongoose.model('Match', matchSchema);

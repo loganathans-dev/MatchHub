@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { request } from '../../utils/request';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import '../../styles/Auth.css';
@@ -9,14 +10,14 @@ const MatchResult = () => {
   const [loading, setLoading] = useState(true);
   const eventId = location.state?.eventId;
   const [selectedMatchId, setSelectedMatchId] = useState(location.state?.matchId || '');
-  
+
   // State for Team Matches
   const [teamScores, setTeamScores] = useState({ teamA: '', teamB: '' });
   const [winnerId, setWinnerId] = useState('');
-  
+
   // State for Multi-participant Events (Rank wise)
   const [ranks, setRanks] = useState({ rank1: '', rank2: '', rank3: '' });
-  
+
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -29,7 +30,7 @@ const MatchResult = () => {
     const fetchMatches = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/matches${eventId ? `?eventId=${eventId}` : ''}`, {
+        const response = await request(`${import.meta.env.VITE_API_URL || ""}/api/matches${eventId ? `?eventId=${eventId}` : ''}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) {
@@ -45,7 +46,9 @@ const MatchResult = () => {
       }
     };
     fetchMatches();
-  }, [eventId]);
+  }, [eventId, navigate]);
+
+  if (loading) return null;
 
   const selectedMatch = matches.find(m => m.id === selectedMatchId);
 
@@ -82,7 +85,7 @@ const MatchResult = () => {
         score_team_a: teamScores.teamA,
         score_team_b: teamScores.teamB,
         winner_id: winnerId,
-        runner_id: winnerId === selectedMatch.teamA._id ? selectedMatch.teamB._id : 
+        runner_id: winnerId === selectedMatch.teamA._id ? selectedMatch.teamB._id :
                    (winnerId === selectedMatch.teamB._id ? selectedMatch.teamA._id : null)
       };
     } else {
@@ -107,10 +110,10 @@ const MatchResult = () => {
     }
 
     console.log('Submitting Match Result:', payload);
-    
+
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/matches/${selectedMatch.id}`, {
+      const response = await request(`${import.meta.env.VITE_API_URL || ""}/api/matches/${selectedMatch.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -128,9 +131,10 @@ const MatchResult = () => {
         alert('Match Result Updated Successfully!');
         navigate(-1);
       } else {
-        setError('Failed to update result');
+        const data = await response.json();
+        setError(data.message || 'Failed to update result');
       }
-    } catch (err) {
+    } catch {
       setError('Server error.');
     }
   };
@@ -150,9 +154,9 @@ const MatchResult = () => {
           {error && <div className="error-message">{error}</div>}
 
           <div className="form-group full-width">
-            <label className="form-label">Select Match/Event *</label>
-            <select 
-              className="form-input" 
+            <label className="form-label" htmlFor="matchresult-field-1">Select Match/Event *</label>
+            <select id="matchresult-field-1"
+              className="form-input"
               value={selectedMatchId}
               onChange={handleMatchChange}
               required
@@ -169,20 +173,20 @@ const MatchResult = () => {
               <h3 style={{ color: 'var(--text-main)', marginBottom: '16px', fontSize: '16px' }}>Score Entry</h3>
               <div className="form-grid">
                 <div className="form-group">
-                  <label className="form-label">{selectedMatch.teamA.name} Score</label>
-                  <input 
-                    type="text" 
-                    className="form-input" 
+                  <label className="form-label" htmlFor="matchresult-field-2">{selectedMatch.teamA.name} Score</label>
+                  <input id="matchresult-field-2"
+                    type="text"
+                    className="form-input"
                     placeholder="e.g. 2, 150/4"
                     value={teamScores.teamA}
                     onChange={(e) => setTeamScores({...teamScores, teamA: e.target.value})}
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">{selectedMatch.teamB.name} Score</label>
-                  <input 
-                    type="text" 
-                    className="form-input" 
+                  <label className="form-label" htmlFor="matchresult-field-3">{selectedMatch.teamB.name} Score</label>
+                  <input id="matchresult-field-3"
+                    type="text"
+                    className="form-input"
                     placeholder="e.g. 1, 148/8"
                     value={teamScores.teamB}
                     onChange={(e) => setTeamScores({...teamScores, teamB: e.target.value})}
@@ -191,9 +195,9 @@ const MatchResult = () => {
               </div>
 
               <div className="form-group full-width" style={{ marginTop: '16px' }}>
-                <label className="form-label">Declare Winner *</label>
-                <select 
-                  className="form-input" 
+                <label className="form-label" htmlFor="matchresult-field-4">Declare Winner *</label>
+                <select id="matchresult-field-4"
+                  className="form-input"
                   value={winnerId}
                   onChange={(e) => setWinnerId(e.target.value)}
                   required
@@ -211,11 +215,11 @@ const MatchResult = () => {
           {selectedMatch && selectedMatch.type !== 'team' && (
             <div style={{ background: 'var(--bg-dark)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '24px' }}>
               <h3 style={{ color: 'var(--text-main)', marginBottom: '16px', fontSize: '16px' }}>Rank Wise Declaration</h3>
-              
+
               <div className="form-group full-width">
-                <label className="form-label" style={{ color: 'gold' }}>1st Place (Winner) *</label>
-                <select 
-                  className="form-input" 
+                <label className="form-label" style={{ color: 'gold' }} htmlFor="matchresult-field-5">1st Place (Winner) *</label>
+                <select id="matchresult-field-5"
+                  className="form-input"
                   value={ranks.rank1}
                   onChange={(e) => setRanks({...ranks, rank1: e.target.value})}
                   required
@@ -228,9 +232,9 @@ const MatchResult = () => {
               </div>
 
               <div className="form-group full-width">
-                <label className="form-label" style={{ color: 'silver' }}>2nd Place (Runner) *</label>
-                <select 
-                  className="form-input" 
+                <label className="form-label" style={{ color: 'silver' }} htmlFor="matchresult-field-6">2nd Place (Runner) *</label>
+                <select id="matchresult-field-6"
+                  className="form-input"
                   value={ranks.rank2}
                   onChange={(e) => setRanks({...ranks, rank2: e.target.value})}
                   required
@@ -243,9 +247,9 @@ const MatchResult = () => {
               </div>
 
               <div className="form-group full-width">
-                <label className="form-label" style={{ color: '#cd7f32' }}>3rd Place (Optional)</label>
-                <select 
-                  className="form-input" 
+                <label className="form-label" style={{ color: '#cd7f32' }} htmlFor="matchresult-field-7">3rd Place (Optional)</label>
+                <select id="matchresult-field-7"
+                  className="form-input"
                   value={ranks.rank3}
                   onChange={(e) => setRanks({...ranks, rank3: e.target.value})}
                 >

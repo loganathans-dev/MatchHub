@@ -1,3 +1,4 @@
+const { handle } = require('../utils/http');
 const College = require('../models/College');
 const Event = require('../models/Event');
 const Match = require('../models/Match');
@@ -8,10 +9,10 @@ const Department = require('../models/Department');
 // @access  Public
 const getColleges = async (req, res) => {
   try {
-    const colleges = await College.find().select('-password');
+    const colleges = await College.find().select('collegeName collegeCode collegeType city district state collegeLogo');
     res.json(colleges);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handle(res, error);
   }
 };
 
@@ -20,14 +21,14 @@ const getColleges = async (req, res) => {
 // @access  Public
 const getCollegeById = async (req, res) => {
   try {
-    const college = await College.findById(req.params.id).select('-password');
+    const college = await College.findById(req.params.id).select('collegeName collegeCode collegeType city district state collegeLogo');
     if (college) {
       res.json(college);
     } else {
       res.status(404).json({ message: 'College not found' });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handle(res, error);
   }
 };
 
@@ -36,10 +37,10 @@ const getCollegeById = async (req, res) => {
 // @access  Public
 const getEvents = async (req, res) => {
   try {
-    const events = await Event.find().populate('college', 'collegeName city').sort({ createdAt: -1 });
+    const events = await Event.find(req.query.collegeId ? { college: req.query.collegeId } : {}).populate('college', 'collegeName city').sort({ createdAt: -1 });
     res.json(events);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handle(res, error);
   }
 };
 
@@ -49,7 +50,7 @@ const getEvents = async (req, res) => {
 const getCollegeMatches = async (req, res) => {
   try {
     // 1. Get all events for this college
-    const events = await Event.find({ college: req.params.id });
+    const events = await Event.find({ college: req.params.id, ...(req.query.eventId ? { _id: req.query.eventId } : {}) }).select('_id');
     const eventIds = events.map(e => e._id);
 
     // 2. Get all matches for those events
@@ -58,12 +59,14 @@ const getCollegeMatches = async (req, res) => {
       .populate('teamB', 'name')
       .populate('participants', 'name')
       .populate('winner', 'name')
+      .populate('runner', 'name')
+      .populate('thirdPlace', 'name')
       .populate('event', 'title')
       .sort({ dateTime: 1 });
 
     res.json(matches);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handle(res, error);
   }
 };
 
@@ -72,10 +75,10 @@ const getCollegeMatches = async (req, res) => {
 // @access  Public
 const getCollegeDepartments = async (req, res) => {
   try {
-    const departments = await Department.find({ college: req.params.id }).sort({ name: 1 });
+    const departments = await Department.find({ college: req.params.id, ...(req.query.eventId ? { event: req.query.eventId } : {}) }).select('name event college registeredSports').sort({ name: 1 });
     res.json(departments);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handle(res, error);
   }
 };
 

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { request } from '../../utils/request';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import '../../styles/Auth.css';
@@ -12,7 +13,7 @@ const MatchSchedule = () => {
     participatingTeamIds: [], // Used for individual/athletics events
     matchDateTime: ''
   });
-  
+
   const [departments, setDepartments] = useState([]);
   const [events, setEvents] = useState([]);
   const [eventSports, setEventSports] = useState([]);
@@ -31,20 +32,21 @@ const MatchSchedule = () => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
-        const eventRes = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/events`, { headers: { 'Authorization': `Bearer ${token}` } });
-        
+        const eventRes = await request(`${import.meta.env.VITE_API_URL || ""}/api/events`, { headers: { 'Authorization': `Bearer ${token}` } });
+
         if (eventRes.ok) {
           const data = await eventRes.json();
           setEvents(data);
-          
+
           let currentEvent = null;
           if (eventId) {
             currentEvent = data.find(e => e._id === eventId);
           }
+          if (eventId && !currentEvent) throw new Error('Selected event is unavailable. Select another event.');
           if (!currentEvent && data.length > 0) {
             currentEvent = data[0]; // Default to most recent/first event
           }
-          
+
           if (currentEvent) {
             setActiveEvent(currentEvent);
             if (currentEvent.sportsList) {
@@ -69,7 +71,7 @@ const MatchSchedule = () => {
             }
 
             // Now fetch departments using the resolved event ID
-            const deptRes = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/departments?eventId=${currentEvent._id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const deptRes = await request(`${import.meta.env.VITE_API_URL || ""}/api/departments?eventId=${currentEvent._id}`, { headers: { 'Authorization': `Bearer ${token}` } });
             if (deptRes.ok) {
               const deptData = await deptRes.json();
               setDepartments(deptData.map(d => ({ ...d, id: d._id })));
@@ -81,7 +83,7 @@ const MatchSchedule = () => {
       }
     };
     fetchData();
-  }, [eventId]);
+  }, [eventId, navigate]);
 
   const selectedSport = eventSports.find(s => s.id === formData.sportId) || AVAILABLE_SPORTS.find(s => s.id === formData.sportId);
   const isTeamSport = selectedSport ? selectedSport.type === 'team' : true;
@@ -101,8 +103,8 @@ const MatchSchedule = () => {
     }
   };
 
-  const filteredDepartments = departments.filter(dept => 
-    dept.registeredSports && dept.registeredSports.includes(formData.sportId)
+  const filteredDepartments = departments.filter(dept =>
+    dept.registeredSports && dept.registeredSports.includes(selectedSport?.name)
   );
 
   const handleInputChange = (e) => {
@@ -113,9 +115,9 @@ const MatchSchedule = () => {
   const handleDateTimeChange = (field, type, value) => {
     setFormData(prev => {
       const currentVal = prev[field] || '';
-      let datePart = '';
+      let datePart;
       let timePart = '';
-      
+
       if (currentVal.includes('T')) {
         [datePart, timePart] = currentVal.split('T');
       } else {
@@ -172,7 +174,7 @@ const MatchSchedule = () => {
       const matchDate = new Date(formData.matchDateTime);
       const eventStart = new Date(activeEvent.startDate);
       const eventEnd = new Date(activeEvent.endDate);
-      
+
       if (matchDate < eventStart || matchDate > eventEnd) {
         setError(`Match date and time must be between the event timeline (${eventStart.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })} — ${eventEnd.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}).`);
         return;
@@ -189,16 +191,16 @@ const MatchSchedule = () => {
         return;
       }
     } else {
-      if (formData.participatingTeamIds.length === 0) {
-        setError('Please select at least one participating team/member for this event.');
+      if (formData.participatingTeamIds.length < 2) {
+        setError('Please select at least two participating departments for this event.');
         return;
       }
     }
 
     const payload = {
-      event: eventId || (events.length > 0 ? events[0]._id : null), 
+      event: eventId || (events.length > 0 ? events[0]._id : null),
       sportName: selectedSport.name,
-      dateTime: formData.matchDateTime,
+      dateTime: new Date(formData.matchDateTime).toISOString(),
       type: isTeamSport ? 'team' : (selectedSport.type === 'individual' ? 'individual' : 'athletics'),
     };
 
@@ -210,10 +212,10 @@ const MatchSchedule = () => {
     }
 
     console.log(`Scheduling Match (${action}):`, payload);
-    
+
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/matches`, {
+      const response = await request(`${import.meta.env.VITE_API_URL || ""}/api/matches`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -240,7 +242,7 @@ const MatchSchedule = () => {
         const data = await response.json();
         setError(data.message || 'Failed to schedule match');
       }
-    } catch (err) {
+    } catch {
       setError('Server error.');
     }
   };
@@ -264,9 +266,9 @@ const MatchSchedule = () => {
               </div>
             )}
           </div>
-          <button 
+          <button
             type="button"
-            className="btn-primary" 
+            className="btn-primary"
             style={{ width: 'auto', padding: '10px 24px', margin: 0, background: 'transparent', border: '1px solid var(--primary-color)', color: 'var(--primary-color)', fontSize: '14px' }}
             onClick={() => navigate('/management/scheduled-matches', { state: { eventId: activeEvent?._id || eventId } })}
           >
@@ -278,10 +280,10 @@ const MatchSchedule = () => {
           {error && <div className="error-message">{error}</div>}
 
           <div className="form-group full-width">
-            <label className="form-label">Select Sport or Event *</label>
-            <select 
-              name="sportId" 
-              className="form-input" 
+            <label className="form-label" htmlFor="matchschedule-field-1">Select Sport or Event *</label>
+            <select id="matchschedule-field-1"
+              name="sportId"
+              className="form-input"
               value={formData.sportId}
               onChange={(e) => {
                 handleInputChange(e);
@@ -308,10 +310,10 @@ const MatchSchedule = () => {
             isTeamSport ? (
               <div className="form-grid">
                 <div className="form-group">
-                  <label className="form-label">Team A *</label>
-                  <select 
-                    name="teamAId" 
-                    className="form-input" 
+                  <label className="form-label" htmlFor="matchschedule-field-2">Team A *</label>
+                  <select id="matchschedule-field-2"
+                    name="teamAId"
+                    className="form-input"
                     value={formData.teamAId}
                     onChange={handleInputChange}
                     required
@@ -322,12 +324,12 @@ const MatchSchedule = () => {
                     ))}
                   </select>
                 </div>
-                
+
                 <div className="form-group">
-                  <label className="form-label">Team B *</label>
-                  <select 
-                    name="teamBId" 
-                    className="form-input" 
+                  <label className="form-label" htmlFor="matchschedule-field-3">Team B *</label>
+                  <select id="matchschedule-field-3"
+                    name="teamBId"
+                    className="form-input"
                     value={formData.teamBId}
                     onChange={handleInputChange}
                     required
@@ -343,8 +345,8 @@ const MatchSchedule = () => {
               <div className="form-group full-width">
                 <label className="form-label" style={{ marginBottom: '8px' }}>Select Participating Teams/Members *</label>
                 <div style={{
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', 
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
                   gap: '12px',
                   background: 'var(--input-bg)',
                   padding: '16px',
@@ -354,8 +356,8 @@ const MatchSchedule = () => {
                   {filteredDepartments.length === 0 && <span style={{ color: 'var(--text-muted)' }}>No departments registered for this sport.</span>}
                   {filteredDepartments.map(team => (
                     <label key={team.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: 'white', fontSize: '14px' }}>
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         checked={formData.participatingTeamIds.includes(team.id)}
                         onChange={() => handleParticipantToggle(team.id)}
                         style={{ width: '18px', height: '18px', accentColor: 'var(--primary-color)' }}
@@ -372,37 +374,37 @@ const MatchSchedule = () => {
           <div className="form-group full-width">
             <label className="form-label">Match/Event Date and Time *</label>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <input 
-                type="date" 
-                className="form-input" 
+              <input
+                type="date"
+                className="form-input"
                 value={formData.matchDateTime ? formData.matchDateTime.split('T')[0] : ''}
                 onChange={(e) => handleDateTimeChange('matchDateTime', 'date', e.target.value)}
                 min={activeEvent && activeEvent.startDate ? toLocalDatetimeLocal(activeEvent.startDate, false).split('T')[0] : undefined}
                 max={activeEvent && activeEvent.endDate ? toLocalDatetimeLocal(activeEvent.endDate, true).split('T')[0] : undefined}
-                required 
+                required
               />
-              <input 
-                type="time" 
-                className="form-input" 
+              <input
+                type="time"
+                className="form-input"
                 value={formData.matchDateTime && formData.matchDateTime.includes('T') ? formData.matchDateTime.split('T')[1] : ''}
                 onChange={(e) => handleDateTimeChange('matchDateTime', 'time', e.target.value)}
-                required 
+                required
               />
             </div>
           </div>
 
           <div style={{ display: 'flex', gap: '16px', marginTop: '24px' }}>
-            <button 
-              type="button" 
-              className="btn-primary" 
+            <button
+              type="button"
+              className="btn-primary"
               style={{ flex: 1, background: 'transparent', border: '1px solid var(--primary-color)', color: 'var(--primary-color)', marginTop: 0 }}
               onClick={(e) => handleSubmit(e, 'add_another')}
             >
               Schedule & Add Another
             </button>
-            <button 
-              type="submit" 
-              className="btn-primary" 
+            <button
+              type="submit"
+              className="btn-primary"
               style={{ flex: 1, marginTop: 0 }}
             >
               Schedule Match

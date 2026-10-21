@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { request } from '../../utils/request';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../../styles/Auth.css';
 
@@ -18,7 +19,7 @@ const SignIn = () => {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/auth/login`, {
+      const response = await request(`${import.meta.env.VITE_API_URL || ""}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -33,7 +34,7 @@ const SignIn = () => {
       } else {
         setError(data.message || 'Login failed');
       }
-    } catch (err) {
+    } catch {
       setError('Server error. Please try again later.');
     }
   };
@@ -48,10 +49,10 @@ const SignIn = () => {
 
         <form className="auth-form" onSubmit={handleSubmit}>
           {error && <div className="error-message">{error}</div>}
-          
+
           <div className="form-group">
-            <label className="form-label">Email Address</label>
-            <input
+            <label className="form-label" htmlFor="signin-field-1">Email Address</label>
+            <input id="signin-field-1"
               type="email"
               className="form-input"
               placeholder="management@college.edu"
@@ -62,11 +63,11 @@ const SignIn = () => {
 
           <div className="form-group">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label className="form-label">Password</label>
+              <label className="form-label" htmlFor="signin-password">Password</label>
               <Link to="/management/forgot-password" style={{ fontSize: '12px', color: '#818cf8', textDecoration: 'none' }}>Forgot Password?</Link>
             </div>
             <input
-              type="password"
+              id="signin-password" type="password"
               className="form-input"
               placeholder="••••••••"
               value={password}
@@ -80,7 +81,7 @@ const SignIn = () => {
         </form>
 
         <div className="auth-footer">
-          Don't have an account? 
+          Don't have an account?
           <Link to="/management/registration" className="auth-link">Register College</Link>
         </div>
       </div>

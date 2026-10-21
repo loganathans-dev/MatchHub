@@ -1,3 +1,6 @@
+const { handle } = require('../utils/http');
+const Event = require('../models/Event');
+const { id, text, strings, fail } = require('../utils/http');
 const Department = require('../models/Department');
 
 // @desc    Register a new department
@@ -7,14 +10,18 @@ const createDepartment = async (req, res) => {
   try {
     const { name, teamCaptain, captainMobile, registeredSports, eventId } = req.body;
 
-    const departmentExists = await Department.findOne({ name, college: req.college._id, event: eventId });
+    if (!id(eventId) || !text(name) || !strings(registeredSports)) throw fail(400, 'Name, event and sports are required');
+    const event = await Event.findOne({ _id: eventId, college: req.college._id });
+    if (!event) throw fail(404, 'Event not found');
+    if (registeredSports.some(sport => !event.sportsList.includes(sport))) throw fail(400, 'Sports must belong to the event');
+    const departmentExists = await Department.findOne({ name: name.trim(), college: req.college._id, event: eventId });
 
     if (departmentExists) {
       return res.status(400).json({ message: 'Department already registered' });
     }
 
     const department = await Department.create({
-      name,
+      name: name.trim(),
       teamCaptain,
       captainMobile,
       registeredSports,
@@ -24,7 +31,7 @@ const createDepartment = async (req, res) => {
 
     res.status(201).json(department);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handle(res, error);
   }
 };
 
@@ -40,7 +47,7 @@ const getDepartments = async (req, res) => {
     const departments = await Department.find(filter).sort({ name: 1 });
     res.json(departments);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handle(res, error);
   }
 };
 

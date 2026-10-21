@@ -1,6 +1,8 @@
+const { handle } = require('../utils/http');
 const College = require('../models/College');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
+const crypto = require('node:crypto');
+const otpHash = otp => crypto.createHash('sha256').update(otp + process.env.JWT_SECRET).digest('hex');
 const nodemailer = require('nodemailer');
 const logger = require('../utils/logger');
 
@@ -18,8 +20,8 @@ const getTransporter = () => {
   });
 };
 
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+const generateToken = (id, version = 0) => {
+  return jwt.sign({ id, role: 'college', version }, process.env.JWT_SECRET, {
     expiresIn: '30d',
   });
 };
@@ -46,13 +48,13 @@ const registerCollege = async (req, res) => {
         _id: college._id,
         email: college.email,
         collegeName: college.collegeName,
-        token: generateToken(college._id),
+        token: generateToken(college._id, college.tokenVersion),
       });
     } else {
       res.status(400).json({ message: 'Invalid college data' });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handle(res, error);
   }
 };
 
@@ -70,13 +72,13 @@ const authCollege = async (req, res) => {
         _id: college._id,
         email: college.email,
         collegeName: college.collegeName,
-        token: generateToken(college._id),
+        token: generateToken(college._id, college.tokenVersion),
       });
     } else {
       res.status(401).json({ message: 'Invalid email or password' });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handle(res, error);
   }
 };
 
@@ -93,10 +95,10 @@ const forgotPassword = async (req, res) => {
     }
 
     // Generate 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = crypto.randomInt(100000, 1000000).toString();
 
     // Save to DB with 10 mins expiry
-    college.resetPasswordOTP = otp;
+    college.resetPasswordOTP = otpHash(otp);
     college.resetPasswordExpires = Date.now() + 10 * 60 * 1000;
     await college.save();
 
@@ -108,7 +110,10 @@ const forgotPassword = async (req, res) => {
       transporter = await getTransporter();
     } catch (err) {
       logger.error('Failed to get SMTP transporter', { email, error: err.message });
-      return res.status(500).json({ message: 'SMTP not configured or invalid credentials', detail: err.message });
+      college.resetPasswordOTP = undefined;
+      college.resetPasswordExpires = undefined;
+      await college.save();
+      return res.status(503).json({ message: 'Password reset email is unavailable' });
     }
 
     let info;
@@ -122,51 +127,15 @@ const forgotPassword = async (req, res) => {
       });
       logger.info('Password reset email sent', { messageId: info.messageId, to: email });
     } catch (err) {
-      logger.warn('Primary email failed (likely needs App Password). Falling back to Ethereal Email.', { error: err.message });
-      
-      try {
-        const testAccount = await nodemailer.createTestAccount();
-        const testTransporter = nodemailer.createTransport({
-          host: "smtp.ethereal.email",
-          port: 587,
-          secure: false, // true for 465, false for other ports
-          auth: {
-            user: testAccount.user, // generated ethereal user
-            pass: testAccount.pass, // generated ethereal password
-          },
-        });
-        
-        info = await testTransporter.sendMail({
-          from: '"Sports Score System Fallback" <noreply@sportsscore.local>',
-          to: email,
-          subject: 'Password Reset OTP',
-          text: `Your OTP for password reset is: ${otp}. It will expire in 10 minutes.`,
-          html: `<p>Your OTP for password reset is: <strong>${otp}</strong></p><p>It will expire in 10 minutes.</p>`,
-        });
-        logger.info('Password reset email sent via Ethereal fallback', { messageId: info.messageId, to: email });
-      } catch (fallbackErr) {
-        logger.error('Failed to send OTP email even with fallback', { email, error: fallbackErr.message });
-        return res.status(502).json({ message: 'Failed to send OTP email', detail: fallbackErr.message });
-      }
+      college.resetPasswordOTP = undefined;
+      college.resetPasswordExpires = undefined;
+      await college.save();
+      logger.error('Password reset delivery failed', { error: err.message });
+      return res.status(502).json({ message: 'Unable to deliver reset email. Try again later.' });
     }
-
-    // If a preview URL exists (dev transports), include it
-    let previewUrl = null;
-    if (nodemailer.getTestMessageUrl && info) {
-      try {
-        previewUrl = nodemailer.getTestMessageUrl(info);
-        if (previewUrl) logger.info('Preview email available', { previewUrl });
-      } catch (e) {
-        // ignore
-      }
-    }
-
-    const responsePayload = { message: 'OTP Sent successfully' };
-    if (previewUrl) responsePayload.previewUrl = previewUrl;
-
-    res.status(200).json(responsePayload);
+    res.status(200).json({ message: 'OTP Sent successfully' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handle(res, error);
   }
 };
 
@@ -178,7 +147,7 @@ const verifyOTP = async (req, res) => {
     const { email, otp } = req.body;
     const college = await College.findOne({
       email,
-      resetPasswordOTP: otp,
+      resetPasswordOTP: otpHash(otp),
       resetPasswordExpires: { $gt: Date.now() }
     });
 
@@ -188,7 +157,7 @@ const verifyOTP = async (req, res) => {
 
     res.status(200).json({ message: 'OTP verified successfully' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handle(res, error);
   }
 };
 
@@ -201,7 +170,7 @@ const resetPassword = async (req, res) => {
 
     const college = await College.findOne({
       email,
-      resetPasswordOTP: otp,
+      resetPasswordOTP: otpHash(otp),
       resetPasswordExpires: { $gt: Date.now() }
     });
 
@@ -209,16 +178,16 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({ message: 'OTP is invalid or has expired' });
     }
 
-    // Set new password, the pre-save hook will hash it
-    college.password = newPassword;
-    college.resetPasswordOTP = undefined;
-    college.resetPasswordExpires = undefined;
-    
-    await college.save();
+    // Hash explicitly because findOneAndUpdate does not run save middleware.
+    const password = await require('bcryptjs').hash(newPassword, 10);
+    const updated = await College.findOneAndUpdate({
+      _id: college._id, resetPasswordOTP: otpHash(otp), resetPasswordExpires: { $gt: Date.now() }
+    }, { $set: { password }, $unset: { resetPasswordOTP: '', resetPasswordExpires: '' }, $inc: { tokenVersion: 1 } });
+    if (!updated) return res.status(400).json({ message: 'OTP is invalid or has expired' });
 
     res.status(200).json({ message: 'Password has been reset successfully' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handle(res, error);
   }
 };
 

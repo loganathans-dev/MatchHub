@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { request } from '../../utils/request';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import '../../styles/Auth.css';
@@ -22,10 +23,10 @@ const ScheduledMatchesList = () => {
       try {
         const token = localStorage.getItem('token');
         const [matchRes, eventRes] = await Promise.all([
-          fetch(`${import.meta.env.VITE_API_URL || ""}/api/matches${eventId ? `?eventId=${eventId}` : ''}`, { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch(`${import.meta.env.VITE_API_URL || ""}/api/events`, { headers: { 'Authorization': `Bearer ${token}` } })
+          request(`${import.meta.env.VITE_API_URL || ""}/api/matches${eventId ? `?eventId=${eventId}` : ''}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          request(`${import.meta.env.VITE_API_URL || ""}/api/events`, { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
-        
+
         if (eventRes.ok && eventId) {
           const eventsData = await eventRes.json();
           const currentEvent = eventsData.find(e => e._id === eventId);
@@ -51,19 +52,12 @@ const ScheduledMatchesList = () => {
       }
     };
     fetchMatchesAndEvent();
-  }, [eventId]);
+  }, [eventId, navigate]);
 
-  const toLocalDate = (dateString) => {
-    if (!dateString) return undefined;
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return undefined;
-    const offset = date.getTimezoneOffset() * 60000;
-    return new Date(date.getTime() - offset).toISOString().split('T')[0];
-  };
 
   // Filter matches based on the selected date (if any)
-  const filteredMatches = filterDate 
-    ? matches.filter(match => match.dateTime.startsWith(filterDate))
+  const filteredMatches = filterDate
+    ? matches.filter(match => new Date(match.dateTime).toLocaleDateString('en-CA') === filterDate)
     : matches;
 
   // Group matches "sports wise"
@@ -77,7 +71,7 @@ const ScheduledMatchesList = () => {
   }, {});
 
   return (
-    <div className="auth-container" style={{ padding: '40px 20px', minHeight: '100vh', alignItems: 'flex-start' }}>
+    <div aria-label={activeEvent?.title || "Scheduled matches"} className="auth-container" style={{ padding: '40px 20px', minHeight: '100vh', alignItems: 'flex-start' }}>
       <div className="auth-card wide" style={{ maxWidth: '1000px', width: '100%' }}>
         <Link to="#" onClick={(e) => { e.preventDefault(); navigate(-1); }} className="auth-link" style={{ display: 'flex', width: 'fit-content', marginBottom: '1rem', color: 'var(--text-muted)' }}>
           <ArrowLeft size={24} />
@@ -87,8 +81,8 @@ const ScheduledMatchesList = () => {
             <h1 className="auth-title" style={{ textAlign: 'left', marginBottom: '8px' }}>Scheduled Matches</h1>
             <p className="auth-subtitle" style={{ textAlign: 'left' }}>View all scheduled fixtures categorized by sport</p>
           </div>
-          <button 
-            className="btn-primary" 
+          <button
+            className="btn-primary"
             style={{ width: 'auto', padding: '10px 24px', margin: 0 }}
             onClick={() => navigate('/management/match-schedule')}
           >
@@ -97,24 +91,24 @@ const ScheduledMatchesList = () => {
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Loading matches...</div>
+          null
         ) : (
           <>
 
         {/* Filters Section */}
         <div style={{ background: 'var(--bg-dark)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '24px', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end' }}>
           <div className="form-group" style={{ flex: '1 1 200px', minWidth: '200px', margin: 0 }}>
-            <label className="form-label">Filter by Date</label>
-            <input 
-              type="date" 
-              className="form-input" 
+            <label className="form-label" htmlFor="scheduledmatcheslist-field-1">Filter by Date</label>
+            <input id="scheduledmatcheslist-field-1"
+              type="date"
+              className="form-input"
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
             />
           </div>
-          <button 
-            type="button" 
-            className="btn-primary" 
+          <button
+            type="button"
+            className="btn-primary"
             style={{ width: 'auto', padding: '12px 24px', margin: 0, background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
             onClick={() => setFilterDate('')}
           >
@@ -127,10 +121,10 @@ const ScheduledMatchesList = () => {
           {Object.keys(groupedMatches).length > 0 ? (
             Object.keys(groupedMatches).map(sport => (
               <div key={sport}>
-                <h2 style={{ 
-                  color: 'var(--primary-color)', 
-                  borderBottom: '2px solid var(--border-color)', 
-                  paddingBottom: '8px', 
+                <h2 style={{
+                  color: 'var(--primary-color)',
+                  borderBottom: '2px solid var(--border-color)',
+                  paddingBottom: '8px',
                   marginBottom: '16px',
                   fontSize: '20px'
                 }}>
@@ -140,12 +134,12 @@ const ScheduledMatchesList = () => {
                   {groupedMatches[sport].map(match => {
                     const matchDate = new Date(match.dateTime).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
                     const matchTime = new Date(match.dateTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-                    
+
                     return (
-                      <div key={match.id} className="responsive-flex-card" style={{ 
-                        background: 'var(--input-bg)', 
-                        border: '1px solid var(--border-color)', 
-                        borderRadius: '12px', 
+                      <div key={match.id} className="responsive-flex-card" style={{
+                        background: 'var(--input-bg)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '12px',
                         padding: '20px',
                         transition: 'transform 0.2s',
                       }}
@@ -153,11 +147,11 @@ const ScheduledMatchesList = () => {
                       onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                       >
                         <div style={{ flex: 2 }}>
-                          <span style={{ 
-                            display: 'inline-block', 
-                            padding: '4px 10px', 
-                            borderRadius: '20px', 
-                            fontSize: '12px', 
+                          <span style={{
+                            display: 'inline-block',
+                            padding: '4px 10px',
+                            borderRadius: '20px',
+                            fontSize: '12px',
                             background: match.type === 'team' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(16, 185, 129, 0.2)',
                             color: match.type === 'team' ? '#60a5fa' : '#34d399',
                             marginBottom: '8px'
@@ -178,12 +172,12 @@ const ScheduledMatchesList = () => {
                             </span>
                           </div>
                         </div>
-                        
+
                         <div style={{ flex: 1, textAlign: 'right' }}>
-                          <span style={{ 
-                            padding: '6px 12px', 
-                            borderRadius: '6px', 
-                            fontSize: '13px', 
+                          <span style={{
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            fontSize: '13px',
                             fontWeight: '500',
                             background: match.status === 'Completed' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
                             color: match.status === 'Completed' ? '#34d399' : '#fbbf24',
@@ -191,16 +185,16 @@ const ScheduledMatchesList = () => {
                           }}>
                             {match.status}
                           </span>
-                          
-                          <button 
-                            style={{ 
-                              display: 'block', 
-                              marginTop: '12px', 
+
+                          <button
+                            style={{
+                              display: 'block',
+                              marginTop: '12px',
                               marginLeft: 'auto',
-                              padding: '6px 16px', 
-                              background: 'transparent', 
-                              border: '1px solid var(--primary-color)', 
-                              color: 'var(--primary-color)', 
+                              padding: '6px 16px',
+                              background: 'transparent',
+                              border: '1px solid var(--primary-color)',
+                              color: 'var(--primary-color)',
                               borderRadius: '6px',
                               cursor: 'pointer',
                               fontSize: '13px',

@@ -11,4 +11,6 @@ const departmentSchema = new mongoose.Schema({
   timestamps: true
 });
 
+departmentSchema.index({ college: 1, event: 1, name: 1 });
+
 module.exports = mongoose.model('Department', departmentSchema);

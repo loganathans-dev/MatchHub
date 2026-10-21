@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { request } from '../../utils/request';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import '../../styles/Auth.css';
@@ -40,9 +41,9 @@ const SportsDayEvent = () => {
   const handleDateTimeChange = (field, type, value) => {
     setFormData(prev => {
       const currentVal = prev[field] || '';
-      let datePart = '';
+      let datePart;
       let timePart = '';
-      
+
       if (currentVal.includes('T')) {
         [datePart, timePart] = currentVal.split('T');
       } else {
@@ -117,15 +118,15 @@ const SportsDayEvent = () => {
     const payload = {
       title: formData.title,
       eventTitle: formData.title,
-      startDate: formData.startDate,
-      endDate: formData.endDate,
+      startDate: new Date(formData.startDate).toISOString(),
+      endDate: new Date(formData.endDate).toISOString(),
       sportsList: sportsNames,
       description: formData.information
     };
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/events`, {
+      const response = await request(`${import.meta.env.VITE_API_URL || ""}/api/events`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -168,8 +169,8 @@ const SportsDayEvent = () => {
           {error && <div className="error-message">{error}</div>}
 
           <div className="form-group full-width">
-            <label className="form-label">Event Name *</label>
-            <input
+            <label className="form-label" htmlFor="sportsdayevent-field-1">Event Name *</label>
+            <input id="sportsdayevent-field-1"
               type="text"
               name="title"
               className="form-input"
@@ -222,9 +223,9 @@ const SportsDayEvent = () => {
           </div>
 
           <div className="form-group full-width" style={{ position: 'relative' }} ref={dropdownRef}>
-            <label className="form-label" style={{ marginBottom: '8px' }}>Search and Add Sports *</label>
+            <label className="form-label" style={{ marginBottom: '8px' }} htmlFor="sportsdayevent-field-2">Search and Add Sports *</label>
 
-            <input
+            <input id="sportsdayevent-field-2"
               type="text"
               className="form-input"
               placeholder="Type to search for a sport... (e.g. Cricket, 100m)"
@@ -325,8 +326,8 @@ const SportsDayEvent = () => {
           </div>
 
           <div className="form-group full-width">
-            <label className="form-label">General Information / Rules *</label>
-            <textarea
+            <label className="form-label" htmlFor="sportsdayevent-field-3">General Information / Rules *</label>
+            <textarea id="sportsdayevent-field-3"
               name="information"
               className="form-input"
               rows="5"

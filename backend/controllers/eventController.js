@@ -1,3 +1,5 @@
+const { handle } = require('../utils/http');
+const { text, strings, fail } = require('../utils/http');
 const Event = require('../models/Event');
 
 // @desc    Create a new event
@@ -8,10 +10,12 @@ const createEvent = async (req, res) => {
     const { title, startDate, endDate, description, sportsList } = req.body;
     const eventTitle = title || req.body.eventTitle || req.body.eventName || req.body.name;
 
-    if (!eventTitle || !eventTitle.trim()) {
+    if (!text(eventTitle)) {
       return res.status(400).json({ message: 'Event title is required' });
     }
 
+    if (typeof startDate !== 'string' || typeof endDate !== 'string' || !Number.isFinite(Date.parse(startDate)) || !Number.isFinite(Date.parse(endDate)) || new Date(endDate) <= new Date(startDate)) throw fail(400, 'Provide a valid event date range');
+    if (!strings(sportsList)) throw fail(400, 'Select at least one sport');
     const event = await Event.create({
       title: eventTitle.trim(),
       startDate,
@@ -23,7 +27,7 @@ const createEvent = async (req, res) => {
 
     res.status(201).json(event);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handle(res, error);
   }
 };
 
@@ -35,7 +39,7 @@ const getEvents = async (req, res) => {
     const events = await Event.find({ college: req.college._id }).sort({ createdAt: -1 });
     res.json(events);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handle(res, error);
   }
 };
 

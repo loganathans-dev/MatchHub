@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { request } from '../../utils/request';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, MapPin, Building2 } from 'lucide-react';
 import './StudentPortal.css';
@@ -14,7 +15,7 @@ const CollegeList = () => {
   useEffect(() => {
     const fetchColleges = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/public/colleges`);
+        const response = await request(`${import.meta.env.VITE_API_URL || ""}/api/public/colleges`);
         if (response.ok) {
           setColleges(await response.json());
         }
@@ -27,7 +28,7 @@ const CollegeList = () => {
     fetchColleges();
   }, []);
 
-  const filteredColleges = colleges.filter(college => 
+  const filteredColleges = colleges.filter(college =>
     (college.collegeName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
     (college.city || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -35,7 +36,7 @@ const CollegeList = () => {
   return (
     <div className="student-portal-container">
       <header className="student-header" style={{ position: 'relative' }}>
-        <button 
+        <button
           onClick={() => navigate('/management/signin')}
           className="admin-btn-primary"
           style={{ position: 'absolute', top: 0, right: 0, width: 'auto', padding: '8px 16px', fontSize: '14px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }}
@@ -48,10 +49,10 @@ const CollegeList = () => {
 
       <div className="student-search-container">
         <Search className="student-search-icon" size={20} />
-        <input 
-          type="text" 
+        <input
+          type="text"
           className="student-search-input"
-          placeholder="Search by college name or city..." 
+          placeholder="Search by college name or city..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -59,14 +60,14 @@ const CollegeList = () => {
 
       <div className="student-college-grid">
         {loading ? (
-          <div style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#94a3b8', padding: '3rem' }}>
-            Loading participating colleges...
-          </div>
+          null
         ) : filteredColleges.map(college => (
-          <div 
-            key={college._id} 
+          <div
+            key={college._id}
             className="student-college-card"
             onClick={() => navigate(`/students/colleges/${college._id}`)}
+            role="link" tabIndex={0}
+            onKeyDown={e => { if (e.key === "Enter") navigate(`/students/colleges/${college._id}`); }}
           >
             <div className="student-college-icon">
               <Building2 size={36} />

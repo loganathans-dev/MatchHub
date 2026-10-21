@@ -1,5 +1,7 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import LoadingIndicator from './components/LoadingIndicator';
+import ApiNotice from './components/ApiNotice';
+import RequireSession from './components/RequireSession';
 import ManagementLayout from './components/ManagementLayout';
 import AdminSignIn from './pages/Admin/AdminSignIn';
 import AdminDashboard from './pages/Admin/AdminDashboard';
@@ -21,6 +23,8 @@ import EventList from './pages/Management/EventList';
 function App() {
   return (
     <Router>
+      <ApiNotice />
+      <LoadingIndicator />
       <Routes>
         {/* Student Portal Routes */}
         <Route path="/students/colleges" element={<CollegeList />} />
@@ -29,15 +33,15 @@ function App() {
 
         {/* Admin Auth Routes */}
         <Route path="/admin/signin" element={<AdminSignIn />} />
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/dashboard" element={<RequireSession admin><AdminDashboard /></RequireSession>} />
 
         {/* Management Auth Routes */}
         <Route path="/management/signin" element={<SignIn />} />
         <Route path="/management/forgot-password" element={<ForgotPassword />} />
         <Route path="/management/registration" element={<Registration />} />
-        
+
         {/* Management Dashboard/Settings Routes */}
-        <Route element={<ManagementLayout />}>
+        <Route element={<RequireSession><ManagementLayout /></RequireSession>}>
           <Route path="/management/home" element={<ManagementHome />} />
           <Route path="/management/event-list" element={<EventList />} />
           <Route path="/management/sports-day-event" element={<SportsDayEvent />} />

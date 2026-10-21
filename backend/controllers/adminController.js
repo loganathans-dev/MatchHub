@@ -1,8 +1,9 @@
+const { handle } = require('../utils/http');
 const Admin = require('../models/Admin');
 const jwt = require('jsonwebtoken');
 
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+  return jwt.sign({ id, role: 'admin' }, process.env.JWT_SECRET, {
     expiresIn: '30d',
   });
 };
@@ -26,7 +27,7 @@ const authAdmin = async (req, res) => {
       res.status(401).json({ message: 'Invalid email or password' });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handle(res, error);
   }
 };
 

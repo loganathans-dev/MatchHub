@@ -5,7 +5,7 @@ const collegeSchema = new mongoose.Schema({
   collegeName: { type: String, required: true },
   collegeCode: { type: String, required: true },
   collegeType: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   mobileNumber: { type: String, required: true },
   password: { type: String, required: true },
   address: { type: String, required: true },
@@ -17,6 +17,7 @@ const collegeSchema = new mongoose.Schema({
   coordinatorMobile: { type: String, required: true },
   coordinatorEmail: { type: String, required: true },
   collegeLogo: { type: String, default: '' },
+  tokenVersion: { type: Number, default: 0 },
   resetPasswordOTP: { type: String },
   resetPasswordExpires: { type: Date },
 }, {

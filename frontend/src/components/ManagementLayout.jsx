@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
 import { Home, CalendarDays, Users, ClipboardList, CalendarCheck, Trophy, Medal, Menu, X } from 'lucide-react';
 import '../styles/Auth.css';
 
@@ -7,7 +7,7 @@ const ManagementNavbar = () => {
   const location = useLocation();
   const eventId = location.state?.eventId;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
+
   // Pass the eventId in state if it exists, so context isn't lost
   const navState = eventId ? { eventId } : {};
 
@@ -66,8 +66,9 @@ const ManagementNavbar = () => {
         </div>
 
         {/* Mobile Menu Button */}
-        <button 
+        <button
           className="mobile-menu-btn"
+          aria-expanded={isMobileMenuOpen} aria-controls="management-mobile-nav"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         >
           {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -76,7 +77,7 @@ const ManagementNavbar = () => {
 
         {/* Mobile Dropdown */}
         {isMobileMenuOpen && (
-          <div className="mobile-nav-dropdown">
+          <div id="management-mobile-nav" className="mobile-nav-dropdown">
             {navItems.map((item, index) => {
               const isActive = location.pathname === item.path;
               return (
@@ -114,6 +115,7 @@ const ManagementLayout = () => {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-dark)' }}>
       <ManagementNavbar />
+      <Link style={{ padding: '8px 20px' }} to="/management/signin" onClick={() => { localStorage.removeItem('token'); localStorage.removeItem('collegeInfo'); }}>Sign out</Link>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Outlet />
       </div>

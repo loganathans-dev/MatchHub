@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { request } from '../../utils/request';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../../styles/Auth.css';
 
@@ -25,7 +26,7 @@ const ForgotPassword = () => {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/auth/forgot-password`, {
+      const response = await request(`${import.meta.env.VITE_API_URL || ""}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -64,13 +65,13 @@ const ForgotPassword = () => {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/auth/verify-otp`, {
+      const response = await request(`${import.meta.env.VITE_API_URL || ""}/api/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp })
       });
       const data = await response.json();
-      
+
       if (response.ok) {
         setMessage('OTP verified successfully.');
         setStep(3);
@@ -100,13 +101,13 @@ const ForgotPassword = () => {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/auth/reset-password`, {
+      const response = await request(`${import.meta.env.VITE_API_URL || ""}/api/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp, newPassword })
       });
       const data = await response.json();
-      
+
       if (response.ok) {
         setMessage('Password reset successfully. Redirecting to sign in...');
         setTimeout(() => {
@@ -148,10 +149,10 @@ const ForgotPassword = () => {
                 <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{serverErrorDetails}</pre>
               </details>
             )}
-            
+
             <div className="form-group">
-              <label className="form-label">Email Address</label>
-              <input
+              <label className="form-label" htmlFor="forgotpassword-field-1">Email Address</label>
+              <input id="forgotpassword-field-1"
                 type="email"
                 className="form-input"
                 placeholder="management@college.edu"
@@ -183,10 +184,10 @@ const ForgotPassword = () => {
                 <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{serverErrorDetails}</pre>
               </details>
             )}
-            
+
             <div className="form-group">
-              <label className="form-label">Enter OTP</label>
-              <input
+              <label className="form-label" htmlFor="forgotpassword-field-2">Enter OTP</label>
+              <input id="forgotpassword-field-2"
                 type="text"
                 className="form-input"
                 placeholder="123456"
@@ -198,9 +199,9 @@ const ForgotPassword = () => {
             <button type="submit" className="btn-primary">
               Verify OTP
             </button>
-            <button 
-              type="button" 
-              onClick={() => { setStep(1); setMessage(''); setError(''); }} 
+            <button
+              type="button"
+              onClick={() => { setStep(1); setMessage(''); setError(''); }}
               style={{ background: 'transparent', color: '#94a3b8', border: 'none', cursor: 'pointer', marginTop: '8px', fontSize: '14px', textDecoration: 'underline' }}
             >
               Change Email Address
@@ -218,10 +219,10 @@ const ForgotPassword = () => {
                 <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{serverErrorDetails}</pre>
               </details>
             )}
-            
+
             <div className="form-group">
-              <label className="form-label">New Password</label>
-              <input
+              <label className="form-label" htmlFor="forgotpassword-field-3">New Password</label>
+              <input id="forgotpassword-field-3"
                 type="password"
                 className="form-input"
                 placeholder="••••••••"
@@ -231,8 +232,8 @@ const ForgotPassword = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Confirm Password</label>
-              <input
+              <label className="form-label" htmlFor="forgotpassword-field-4">Confirm Password</label>
+              <input id="forgotpassword-field-4"
                 type="password"
                 className="form-input"
                 placeholder="••••••••"
