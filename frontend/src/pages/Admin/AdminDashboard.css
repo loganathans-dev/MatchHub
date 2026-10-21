@@ -13,8 +13,7 @@
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 1rem;
-}
+  gap: 1rem;  }
 
 .admin-dashboard-title {
   font-size: 2rem;
