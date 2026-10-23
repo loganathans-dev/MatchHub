@@ -9,6 +9,7 @@ import './StudentPortal.css';
 const CollegeList = () => {
   const [colleges, setColleges] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
@@ -20,6 +21,7 @@ const CollegeList = () => {
           setColleges(await response.json());
         }
       } catch (err) {
+        setError('Unable to load colleges. Please refresh the page to try again.');
         console.error('Failed to fetch colleges', err);
       } finally {
         setLoading(false);
@@ -85,7 +87,12 @@ const CollegeList = () => {
           </div>
         ))}
 
-        {!loading && filteredColleges.length === 0 && (
+        {!loading && error && (
+          <div role="alert" style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#fca5a5', padding: '3rem' }}>
+            {error}
+          </div>
+        )}
+        {!loading && !error && filteredColleges.length === 0 && (
           <div style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#94a3b8', padding: '3rem' }}>
             No colleges found matching "{searchQuery}"
           </div>
