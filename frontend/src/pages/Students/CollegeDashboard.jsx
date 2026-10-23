@@ -93,18 +93,18 @@ const CollegeDashboard = () => {
           {/* 1. Details Tab */}
           {activeTab === 'details' && (
             <div style={{ display: 'grid', gap: '2rem', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))' }}>
-              <div>
+              <div className="overview-detail-card">
                 <h3 style={{ color: '#818cf8', marginBottom: '1rem' }}>Institution Address</h3>
                 <p style={{ color: '#f8fafc', margin: '0 0 0.5rem 0' }}>{college.district || college.city}</p>
                 <p style={{ color: '#94a3b8', margin: '0 0 0.5rem 0' }}>{college.city}, {college.state}</p>
                 {college.location && <p style={{ color: '#38bdf8', fontSize: '0.875rem' }}><MapPin size={14} style={{display:'inline'}}/> Coordinates: {college.location}</p>}
               </div>
-              <div>
+              <div className="overview-detail-card">
                 <h3 style={{ color: '#818cf8', marginBottom: '1rem' }}>Sports Institution</h3>
                 <p style={{ color: '#f8fafc', margin: '0 0 0.5rem 0' }}>{college.collegeType}</p>
                 <p style={{ color: '#94a3b8', margin: '0' }}>{college.collegeCode}</p>
               </div>
-              <div>
+              <div className="overview-detail-card">
                 <h3 style={{ color: '#818cf8', marginBottom: '1rem' }}>Participating Departments</h3>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                   {departments.length > 0 ? departments.map(dept => (

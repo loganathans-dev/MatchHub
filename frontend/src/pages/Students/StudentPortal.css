@@ -436,3 +436,33 @@
     padding: 1.5rem 1rem;
   }
 }
+.student-event-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px;
+  cursor: pointer;
+  background: linear-gradient(145deg, #132d43, #0d2035);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 20px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.student-event-card:hover,
+.student-event-card:focus-visible {
+  transform: translateY(-4px);
+  border-color: #38bdf8;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3);
+}
+
+.student-event-card:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .student-event-card { transition: none; }
+  .student-event-card:hover,
+  .student-event-card:focus-visible { transform: none; }
+}
