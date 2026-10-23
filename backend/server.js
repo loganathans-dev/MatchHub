@@ -9,7 +9,12 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.disable('x-powered-by');
-app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }));
+const allowedOrigins = new Set([
+  'http://localhost:5173',
+  'https://match-hub.netlify.app',
+  ...(process.env.CLIENT_ORIGIN || '').split(',').map(origin => origin.trim()).filter(Boolean),
+]);
+app.use(cors({ origin: (origin, callback) => callback(null, allowedOrigins.has(origin)) }));
 app.use(express.json({ limit: '100kb' }));
 
 app.use((req, res, next) => {
